@@ -25,7 +25,7 @@ code.r{ font-size: 20px; }
 
 ```{r setup, include=FALSE}
 if (!require(pacman)) { install.packages("pacman"); library(pacman) }
-p_load(knitr, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR)
+p_load(knitr, ppcor, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR)
 knitr::opts_chunk$set(echo = TRUE) #print code by default
 options(digits=3) 
 ```
@@ -175,11 +175,10 @@ I will probably screw these up along the way, but I wanted to mention them up fr
 
 We'll use housing price data from Boston's 1970 census to review important concepts in correlation and regression. This is a nice dataset for regression because there are many interdependent variables: crime, pollutants, age of properties, etc.
 
-
 ```{r}
 #example dataset from mlbench package with home prices in Boston by census tract
 data(BostonHousing2)
-BostonSmall <- BostonHousing2 %>% select(
+BostonSmall <- BostonHousing2 %>% dplyr::select(
   cmedv, #median value of home in 1000s
   crim, #per capita crime by town
   nox, #nitric oxide concentration
@@ -200,6 +199,12 @@ from_r
 ```
 
 And we can look under the hood to verify that we understand the concept and formula:
+
+$$
+s_{XY} = \frac{\sum{(X-\bar{X})(Y-\bar{Y})}}{N-1}
+$$
+
+
 ```{r}
 mycov <- function(x, y) {
   stopifnot(length(x)==length(y))
@@ -217,7 +222,7 @@ cmat
 
 Or we can do the matrix math by hand:
 
-$$\mathbf{S_{xx}} = 1/(N-1)\mathbf{X'X}$$
+$$\mathbf{S_{XX}} = 1/(N-1)\mathbf{X'X}$$
 
 if $\mathbf{X}$ is a matrix that is already in deviation form (i.e., each variable is mean-centered).
 
@@ -561,6 +566,59 @@ $$ r_{Y(X1 \cdot X2)} = \frac{r_{Y,X1} - r_{Y,X2}r_{X1,X2}}{\sqrt{1-r_{X1,X2}^2}
 - $a$ is the part correlation of $X1$ with $Y$, adjusting for $X1-X2$ association.
 
 - $\frac{a}{a+d}$ is the partial correlation of $X1$ with $Y$, controlling for $X2$.
+
+## Decomposing variance explained in regression using (standardized coefficients, part, or partial correlations)
+Determining the 
+```{r}
+#some work on relative importance in multiple regression, nonequivalence of R2 measures with standardized betas
+#m5 <- lm(cmedv ~ log_crim + nox -1, BostonSmall_std)
+#summary(m5)
+
+m5 <- lm(cmedv ~ log_crim + nox, BostonSmall)
+lm.beta(lm(cmedv ~ log_crim + nox, BostonSmall))
+
+BostonSmall <- BostonSmall %>% add_predictions(m5)
+coef(m5)["log_crim"] * cov(BostonSmall_std$cmedv, BostonSmall_std$log_crim)
+coef(m5)["nox"] * cor(BostonSmall_std$cmedv, BostonSmall_std$nox)
+library(relaimpo)
+xx <- calc.relimp(m5, type = c("lmg", "first", "last", "betasq", "pratt", "genizi", "car"))
+
+mu <- rep(2,3)
+Sigma <- tribble(
+  ~y, ~x1, ~x2,
+  1, 0.4, 0.4,
+  0.4, 1, 0,
+  0.4, 0, 1
+)
+
+sim_nocorr <- data.frame(mvrnorm(n=1000, mu=mu, Sigma=Sigma))
+names(sim_nocorr) <- c("y", "x1", "x2")
+cor(sim_nocorr) #verify that x1 and x2 correlate with y, but not each other
+lm.beta(lm(y ~ x1 + x2, sim_nocorr))
+
+with(sim_nocorr, spcor.test(y, x1, x2))
+with(sim_nocorr, spcor.test(y, x2, x1))
+
+#add correlation of 0.2 between x1 and x2
+Sigma <- tribble(
+  ~y, ~x1, ~x2,
+  1, 0.4, 0.4,
+  0.4, 1, 0.6,
+  0.4, 0.6, 1
+)
+
+sim_withcorr <- data.frame(mvrnorm(n=1000, mu=mu, Sigma=Sigma))
+names(sim_withcorr) <- c("y", "x1", "x2")
+
+#now, semipartial and standardized beta are not equivalence
+lm.beta(lm(y ~ x1 + x2, sim_withcorr))
+
+with(sim_withcorr, spcor.test(y, x1, x2))
+with(sim_withcorr, spcor.test(y, x2, x1))
+
+
+```
+
 
 # Assumptions of regression (from Kline)
 

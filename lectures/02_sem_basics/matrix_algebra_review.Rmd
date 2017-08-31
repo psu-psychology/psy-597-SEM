@@ -1,0 +1,493 @@
+---
+title: "Matrix Algebra Overview"
+subtitle: "PSY 597 Week 2"
+author: "Michael Hallquist"
+date: "31 Aug 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 24px; max-width: 1400px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+</style>
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3) 
+```
+
+#Matrix Algebra
+
+Structural equation modeling is based on solving a set of 'structural equations' -- that is, simultaneous equations that specify a belief about the underlying structure of a covariance matrix. In multiple regression, we are used to seeing a single regression equation such as:
+
+$$ \hat{Y} = B_0 + B_1 X_1 + B_2 X_2 + B_3 X_3 + \varepsilon $$
+
+This can be expressed in a path model:
+
+```{r}
+##ported from http://m-clark.github.io/docs/sem/graphical-models-1.html
+grViz("digraph DAG {
+
+graph [rankdir = LR bgcolor=transparent]
+
+node [shape = square, fontcolor=gray25 color=gray80]
+
+node [fontname='Helvetica']
+X1 [label=<X<sub>1</sub>>]; X2 [label=<X<sub>2</sub>>]; X3 [label=<X<sub>3</sub>>]; 
+
+node [fillcolor=gray90 style=filled]
+Y;
+
+edge [color=gray50 style=filled]
+X1 -> Y; X2 -> Y; X3 -> Y;
+}")
+```
+
+But one could easily have two criterion variables that are predicted by the same predictors. For example, how do sex, age, and education predict cognitive functioning and physical disability?
+
+```{r}
+grViz("digraph DAG {
+
+graph [rankdir = LR bgcolor=transparent]
+
+node [shape = box, fontcolor=gray25 color=gray80]
+
+node [fontname='Helvetica']
+Age; Educ; Sex; 
+
+node [fillcolor=gray90 style=filled]
+Cog_Fun Phys_Dis;
+
+edge [color=gray50 style=filled]
+Age -> Cog_Fun; Educ -> Cog_Fun; Sex -> Cog_Fun;
+Age -> Phys_Dis; Educ -> Phys_Dis; Sex -> Phys_Dis;
+}")
+```
+
+In conventional regression, one could simply think of this as two regression equations implemented in separate models, one for cognitive function, one for physical disability. This, however, does now handle a number of possibilities, such as the importance of a relationship between cognitive function and disability. Perhaps these are correlated outcomes for important conceptual reasons.
+
+Furthermore, an important idea in SEM is that any variable in the covariance matrix could potentially serve as both criterion and predictor. Consider a mediation model related to the example above:
+
+```{r}
+grViz("digraph DAG {
+
+graph [rankdir = LR bgcolor=transparent]
+
+node [shape = box, fontcolor=gray25 color=gray80]
+
+node [fontname='Helvetica']
+Age; Educ; Sex;
+
+node [fillcolor=gray90 style=filled]
+Cog_Fun Phys_Dis;
+
+edge [color=gray50 style=filled]
+Age -> Phys_Dis; Educ -> Phys_Dis; Sex -> Phys_Dis;
+Phys_Dis -> Cog_Fun;
+}")
+```
+
+In this model, the effects of background variables (age, sex, education) on cognitive functioning are entirely mediated by physical disability. This is a stronger hypothesis, but it all relates to the original covariance matrix of these data. That is, does this model provide a good representation of the *structure* of the covariance matrix?
+
+# Solving systems of equations using algebra
+
+Briefly, figuring out the parameter estimates in models containing more than one outcome depends on solving multiple regression equations. As in high-school algebra, to solve uniquely a set of $n$ unknown variables, one needs $n$ equations. One can think of this as a system with zero degrees of freedom.
+
+From [Wikipedia](https://en.wikipedia.org/wiki/System_of_linear_equations): 
+$$
+\begin{align}
+2x + 3y & = 6 \\
+4x + 9y & = 15
+\end{align}
+$$
+
+This can be re-expressed in matrix form:
+$$
+\begin{bmatrix}
+2 & 3 \\
+4 & 9 
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+= 
+\begin{bmatrix}
+6 \\
+15
+\end{bmatrix}
+$$
+
+More generally, any system of equations can be thought of as a weighted (linear) combination of variables in which a weight matrix $\mathbf{A}$ multiplies a variable column vector, $w$, with the constants (on the right-hand side) in a column vector $\mathbf{b}$.
+
+$$
+x \begin{bmatrix} 2 \\ 4 \end{bmatrix} + y \begin{bmatrix} 3 \\ 9 \end{bmatrix} = \begin{bmatrix} 6 \\ 15 \end{bmatrix}
+$$
+
+$$
+\mathbf{A} = \begin{bmatrix}
+2 & 3 \\
+4 & 9 
+\end{bmatrix}
+,
+\mathbf{w} = \begin{bmatrix}
+x \\
+y
+\end{bmatrix},
+\mathbf{b} = \begin{bmatrix} 6 \\ 15 \end{bmatrix}
+$$
+And in compact matrix notation:
+
+$$
+\mathbf{A}\mathbf{w} = \mathbf{b}
+$$
+
+##Solving equations using `R`
+And in `R` code, we can setup such as a system as:
+
+```{r}
+A=tribble(
+  ~x, ~y,
+  2, 3,
+  4, 9
+)
+print(A)
+b=matrix(c(6,15), ncol=1)
+print(b)
+```
+
+And we can solve for $x$ and $y$ using the `solve()` function in `R`:
+
+```{r}
+solve(A,b)
+```
+Handy!
+
+##Matrix inversion
+How did it do that? A bit of detail (here)[https://www.varsitytutors.com/hotmath/hotmath_help/topics/solving-systems-of-linear-equations-using-matrices]. In this case, if $\mathbf{A}$ is square (equal number of rows and columns) and all of the rows are independent (i.e., no two equations are the same or multiples of each other), we can solve this system by using the inverse of the $\mathbf{A}$ matrix, $\mathbf{A}^{-1}$:
+
+```{r}
+solve(A)
+```
+
+More specifically,
+
+$$
+\mathbf{w} = \mathbf{A^{-1}b}
+$$
+```{r}
+solve(A) %*% b
+```
+
+We will largely avoid the details of inverting matrices in this class. However, the important conceptual point is that the inverse of a square matrix is another matrix of the same size that when multiplied with the original matrix yields an identity matrix (i.e., 1s on the diagonal, 0s elsewhere).
+
+$$\mathbf{A}^{-1}\mathbf{A}=\mathbf{I}$$
+
+For example, if $\mathbf{A}$ is $n \times n$ and $n = 5$, then multiplying $A$ by its inverse $A^{-1}$ yields
+
+$$\mathbf{I} = \begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 1 \\
+\end{bmatrix}
+$$
+
+Notice how this is akin to the idea that any number multiplied by its inverse equals one:
+
+$$x \cdot \frac{1}{x} = 1$$
+
+## Solving multiple regression using matrix algebra
+
+The details are beyond the scope of the class, but the OLS estimates of a multiple regression equation can be derived analytically:
+
+$$\mathbf{\hat{b}}=(\mathbf{X'X})^{−1}\mathbf{X'y}$$
+where $\mathbf{\hat{b}}$ is a vector of parameters one for each predictors (i.e., column in the design matrix), $\mathbf{X}$ is the *design matrix* consisting of a rows of observations of predictor variables, augmented with a column of 1s (the intercept; mean structure), and $\mathbf{y}$ is a column vector of values for the criterion variable:
+
+$$
+\mathbf{X} = \begin{bmatrix}
+1 & x_{11} & x_{12} \\
+1 & x_{21} & x_{22} \\
+1 & x_{31} & x_{32}
+\end{bmatrix},
+\enspace
+\mathbf{y}=\begin{bmatrix}
+y_{1} \\
+y_{2} \\
+y_{3}
+\end{bmatrix},
+\enspace
+\mathbf{b} = \begin{bmatrix}
+b_{0} \\
+b_{1} \\
+b_{2}
+\end{bmatrix}
+$$
+
+The important point is that we can estimate a set of unknown *parameters*, $\mathbf{b}$ according to a formal understanding of how values of $\mathbf{X}$ are optimally combined with the estimated parameters $\mathbf{b}$ to predict the criterion $\mathbf{Y}$. For additional details, see here: <https://onlinecourses.science.psu.edu/stat501/node/382>
+
+The same idea, albeit in larger form, underlies structural equation modeling, where we have several matrices and free parameters in different parts of the model (e.g., structural versus measurement). The goal is to solve for all of these different parameters at once, often using maximum likelihood estimation.
+
+## Returning to Boston housing data, estimating optimal parameters using matrix multiplication
+
+Remember this analysis from last week? We were interested in the association of median home value with log_2(crime) and nitric oxide concentration
+
+```{r}
+data(BostonHousing2)
+
+BostonSmall <- BostonHousing2 %>% dplyr::select(
+  cmedv, #median value of home in 1000s
+  crim, #per capita crime by town
+  nox, #nitric oxide concentration
+  lstat #proportion of lower status
+  )
+BostonSmall$log_crim <- log2(BostonSmall$crim)
+m <- lm(cmedv ~ log_crim + nox, BostonSmall)
+summary(m)
+```
+
+Let's see how this is solved using matrix algebra.
+
+```{r}
+#add a column of 1s as the first 'predictor' to model mean structure (i.e., the intercept)
+X = cbind(intercept=1, as.matrix(select(BostonSmall, log_crim, nox)))
+y = as.matrix(select(BostonSmall, cmedv))
+
+#(X'X)-1 * X' y
+bvals <- solve(t(X) %*% X) %*% t(X) %*% y
+print(bvals)
+```
+
+In short, we've identified optimal (OLS) parameters by solving the multiple regression equation for log_2(crime) and nox.
+
+## What about estimating of uncertainty in the parameters?
+
+This is heavier math, but in inferential statistics, we are often (if not always) interested both in making an inference about a quantity or parameter, while also taking into account uncertainty about the parameter. For example, if I say that looking over data from the past two years, the probability of dying while cliff diving is approximately 5%, but that it could be as low as 1% or as high as 90%, what would you do? I would certainly want a more precise estimate!! If I knew that the margin of error in the estimate was only 1%, I might be more likely to try it.
+
+The analogous concept in regression is the standard error, which represents the probability distribution for the value of a *parameter* if we were to estimate it repeatedly in independent samples of the same size drawn from the same population. Simply put, the standard error represents the standard deviation of the uncertainty in our parameter estimate. Our parameter is an *estimate* of the unknown population parameter -- thus, we have *sampling error* in the estimate, which our standard error quantifies. If we are estimating a mean of a set of scores based on a sample of size $N$, the standard error of our mean estimate is:
+
+$$
+SE_{M} = \frac{s}{\sqrt{N}}
+$$
+
+In the context of regression, standard errors of the parameter estimates, $\mathbf{B}$, are based on the covariance matrix of the *parameters* (not the data). The covariance matrix of the parameters quantifies how much uncertainty there is about each parameter (i.e., the variance along the diagonal), as well as the joint uncertainty about bivariate combinations of parameters (i.e., covariances off the diagonal). This matrix is defined as:
+
+$$
+\mathbf{S_{\hat{b}}} = \sigma^{2}(\mathbf{X'X})^{-1}
+$$
+But what is $\sigma^{2}$? It is the variance of the residuals. Returning to the regression equation:
+
+$$ \hat{Y} = B_0 + B_1 X_1 + B_2 X_2 + B_3 X_3 + \varepsilon $$
+
+the second part I haven't mentioned it that the residuals $\varepsilon$ are assumed to be independent and identically distributed (i.i.d.) according to a normal distribution:
+
+$$\varepsilon \sim \mathcal{N}(0, \sigma^{2}\mathbf{I})$$
+
+That is, the residuals should have mean of 0 and variance $\sigma^{2}$. The $\mathbf{I}$ is not usually mentioned, but is simply the formal reminder that the vector of responses $\mathbf{y}$ is a column vector. Thus, errors for each realization of $\mathbf{y} = \{y_1, y_2, y_3\}$ fall along rows of a diagonal matrix like so:
+
+$$
+\Sigma = \begin{bmatrix}
+\sigma^2 & 0 & 0 \\
+0 & \sigma^2 & 0 \\
+0 & 0 & \sigma^2
+\end{bmatrix}
+$$
+
+But how do we estimate $\sigma^2$? It's based on the magnitude of the residuals:
+
+$$
+\hat{\sigma}^2 = \frac{ \sum_{i=1}^{N}(y_i - \hat{y}_i)^2 } {N - p - 1}
+$$
+
+Note that $\sigma^2$ is also known as mean squared error, which related back to the idea of partition the total sum of squares into the parts accounted for in the model versus residual, unaccounted for variance:
+
+$$
+\begin{align}
+SS_\textrm{Total} &= \sum_{i=1}^{N}({y_i - \bar{y}})^2 \\
+SS_\textrm{Model} &= \sum_{i=1}^{N}({\hat{y}_i - \bar{y}})^2 \\
+SS_\textrm{Error} &= \sum_{i=1}^{N}({y_i - \hat{y}})^2 = SS_\textrm{Total} - SS_\textrm{Model}
+\end{align}
+$$
+
+$$
+\begin{align}
+df_\textrm{Error} &= N - p - 1 \\
+MS_\textrm{Error} &= SS_\textrm{Error}/df_\textrm{Error}
+\end{align}
+$$
+
+
+Where the predicted values $\hat{\mathbf{y}}$ are given by the product of the design matrix, $\mathbf{X}$ with the parameter estimates $\mathbf{\hat{b}}$:
+
+$$\mathbf{\hat{y}} = \mathbf{X\hat{b}}$$
+
+And if we want to estimate this in `R`:
+
+```{r}
+yhat <- X %*% bvals
+N = nrow(X) #number of observations
+p = ncol(X) #number of predictors in the design matrix (includes intercept term)
+dfError <- N - p #note that because intercept is already a column in the design matrix, the extra - 1 is not required
+sigmaSq <- sum((y - yhat)^2)/dfError  # estimate of sigma-squared/MSerror
+
+#standard errors are defined by the standard deviation of the parameter estimates
+#note that S_bhat already adjusts for the df_error since this is in the denominator of sigmaSq
+S_bhat <- sigmaSq * solve(t(X) %*% X)
+
+se_bhat <- sqrt(diag(S_bhat))
+parmat <- cbind(bvals, se_bhat, bvals/se_bhat)
+colnames(parmat) <- c("b", "se", "t")
+print(parmat) #matches summary(lm)
+```
+Additional details on standard error computation [here](https://stats.stackexchange.com/questions/44838/how-are-the-standard-errors-of-coefficients-calculated-in-a-regression)
+
+And for comparison, the output of `summary(lm(m))`:
+
+```{r}
+summary(m)
+```
+
+#Matrix addition and subtraction
+
+Stepping back a bit, it is useful to note that matrix addition and subtraction is straightforward. Specifically, matrix addition and subtraction are applied elementwise:
+
+$$
+\mathbf{A} = \begin{bmatrix} 
+10 & 5 \\
+9 & 1
+\end{bmatrix}
+, \enspace
+\mathbf{B} = \begin{bmatrix} 
+2 & 1 \\
+20 & 0
+\end{bmatrix}, \enspace
+\textrm{then }
+\mathbf{A}-\mathbf{B}=
+\begin{bmatrix} 
+8 & 4 \\
+-11 & 1
+\end{bmatrix}
+$$
+
+Note that matrices must be of the same *dimension* (i.e., number of rows and columns) to be subtracted or added.
+
+#Matrix multiplication
+
+To multiply a matrix $\mathbf{X}$ by a (scalar) constant $a$, one simply multiplies all elements of $\mathbf{X}$ by $a$:
+
+$$
+\mathbf{A} = \begin{bmatrix} 
+10 & 5 \\
+9 & 1
+\end{bmatrix}, \enspace
+k=2, \enspace
+k\mathbf{A} = \begin{bmatrix} 
+20 & 10 \\
+18 & 2
+\end{bmatrix}
+$$
+Multiplication is a more complex operation when both objects are matrices. First, the order matters, such that $\mathbf{AB}$ is not (usually) the same as $\mathbf{BA}$. Second, if we are computing $C = AB$, then the number of columns in A must match the number of rows in B:
+
+$$
+\underset{n \times k}{\mathbf{C}} = \underset{n \times p}{\mathbf{A}} \cdot \underset{p \times k}{\mathbf{B}}
+$$
+Thus, the resulting matrix $\mathbf{C}$ has the number of rows of $\mathbf{A}$ and the number of columns of $\mathbf{B}$. How does this happen? One multiplies the elements of the *i*th row of $\mathbf{A}$ by the elements of the *j*th column of $\mathbf{B}$, then sums up these values into the *i*th row and *j*th column of $\mathbf{C}$. Like so:
+
+$$c_{ij} = \sum_{k=1}^{p} a_{ik} b_{kj}$$
+
+![<http://texample.net/tikz/examples/matrix-multiplication>](matrix_multiplication.png)
+
+Matrix division is not commonly discussed, but it is conceptually related to the idea of an inverse. If you think of single numbers:
+
+$$c = \frac{x}{y} \implies xy^{-1}$$
+Likewise, matrix division can be thought of as:
+
+$$\mathbf{AB}^{-1}$$
+As mentioned above, matrix multiplication is not (usually) commutative, so the concept of matrix division is tricky and not especially useful or prevalent.
+
+# Positive definite matrices
+
+In SEM, we typically need the covariance matrix to be *positive definite*. Although the math behind this is more complex than we'll cover in class, there are several important properties of positive definite matrices that we can verify in our data prior (or as part of) SEM estimation.
+
+1. The covariance matrix must have an inverse $\mathbf{S_{XX}}^{-1}$. Matrices that do not have an inverse are called *singular*.
+2. The *eigenvalues* of a matrix must all be positive. This also means that the determinant of the matrix (used in inversion) is also positive.
+3. All correlations and covariances must be in bounds (i.e., no impossible values). This is rarely a problem if you work from raw data since the computer estimates the covariance structure.
+
+# A primer on eigendecomposition 
+
+You may have heard about eigenvalues in the context of factor analysis (and you will again in this class), or in matrix algebra, or not at all. Eigendecomposition is a hefty topic that underpins principal components analysis, factor analysis, and other techniques that seek to describe the latent structure of relationships among variables (including SEM). Conceptually, the idea is that any matrix $\underset{n \times p}{\mathbf{X}}$ can be decomposed into a set of $p$ unrelated (orthogonal) latent directions that best span the multivariate space of the data.
+
+## Eigendecomposition of a bivariate association
+
+More simply consider our housing data:
+
+```{r}
+ggplot(BostonSmall) + aes(x=log_crim, y=nox) + geom_point() + theme_bw(base_size=20) + stat_smooth(method="lm", se=FALSE)
+```
+
+There is clearly some linear relationship between log_2(crime) and nitric oxide concentration, though it is not perfect. The goal of eigen decomposition in this circumstance would be to identify a new variable that is a linear combination of log_2(crime) and nox that explains their shared variance:
+
+$$d_i= w_1 \textrm{log}_2(\textrm{crime})_i + w_2 \textrm{nox}_i$$
+Thus, the idea is that the new, estimated variable $d_i$ is a weighted combination of the observed variables. This is our first encounter with a latent variable in that $d_i$ is a new 'direction' through the data that maximizes the shared variance between the two observed variables.
+
+One can think of eigendecomposition proceeding iteratively (though it is simultaneous in the maths) in order to explain all observed covariance among the variables in a data matrix $X$. This is conceptually close to Type I sum of squares in regression/ANOVA if that rings a bell. More specifically, imagine that we extract the dominant direction through the data that describes the relationship between log_2(crime) and nitric oxide concentration. In the two-variable case, the latent direction $\mathbf{b}$ is equal to the best-fitting regression line. This holds true because the OLS criterion requires that the parameter estimate summarizing the bivariate relationship explains the maximal variance in $\mathbf{y}$ attributable to a predictor $\mathbf{x}_1$.
+
+```{r}
+pcademo <- select(BostonSmall, nox, log_crim)
+
+#compute a principal component analysis (eigendecomposition on the scaled data)
+mm <- prcomp(pcademo, scale. = FALSE)
+
+#add first principal component/eigenvector (principal direction through bivariate data)
+augment <- pcademo %>% mutate(ev1=mm$x[,1])
+
+ggplot(augment) + aes(x=log_crim, y=nox, color=ev1) + geom_point() + theme_bw(base_size=20)
+```
+
+Related: note the 1.0 correlation between the latent direction $\mathbf{b}$ and the fitted values of the regression model describing the bivariate relationship:
+
+```{r}
+bvmodel <- lm(nox ~ log_crim, BostonSmall)
+cor(fitted(bvmodel), augment$ev1)
+```
+
+Now consider the leftover variance (the residual $\mathbf{y} - \mathbf{\hat{y}}$). The goal of eigendecomposition is to identify any residual structure in those data (i.e., what is the *latent* direction that explains the remaining covariance?). Thus, the second dominant direction through these bivariate data looks for a combination of the observed variables log_2(crime) and nox that explains the most remaining variance in the relationship.
+
+Note that the second latent direction is synonymous with the magnitude of the residual (color gradient from left to right)
+```{r}
+augment <- augment %>% mutate(ev2=mm$x[,2]) %>% add_predictions(bvmodel) %>% add_residuals(bvmodel)
+ggplot(augment) + aes(x=resid, y=pred, color=ev2) + geom_point()
+with(augment,cor(resid, ev2))
+```
+Don't worry about the sign of the correlation -- 'directions' in this latent space have a start and end (i.e., an arrow pointing one direction), but it is the absolute value that matters.
+
+Importantly, these latent directions are orthogonal to each other. Think of this as taking the residuals of one regression model as the input to the next model. Each one tries to describe leftover variation.
+
+## Eigenvalues and eigenvectors
+
+Let's anchor our bivariate regression insights onto the nomenclature of eigendecomposition. A latent direction through the data matrix $\mathbf{X}$ ($n \times p$) is called an eigenvector, which is defined as a weighted sum of the observed data:
+
+$$\nu_{i} = w_{i,1} x_1 + w_{i,2}x_2 + ... w_{i,p}$$
+
+The similarity to a regression equation is notable in that we've generated a new criterion of sorts $\nu_i$ that is a combination of the variables in a matrix $\mathbf{X}$ that maximizes shared variance. Importantly, though, the order of the eigenvectors matters. The first gets to 'chew on' all observed covariation among variables in $\mathbf{X}$, the second gets its leftovers, the third gets the leftovers of the second, and so on. Thus, the weights for the *i*th eigenvector are estimated to optimally explain whatever variation remains in the matrix at the *i*th iteration.
+
+Each eigenvector has a corresponding eigenvalue that summarizes how strongly the data coalesce around that direction. Said differently, larger eigenvalues indicate that more shared variability is explained by that eigenvector. Indeed, there is a mathematical relationship between variance explained and eigenvalues.
+
+
+Additional details on PCA and eigendecomposition [here](http://stats.stackexchange.com/questions/2691/making-sense-of-principal-component-analysis-eigenvectors-eigenvalues
+).
