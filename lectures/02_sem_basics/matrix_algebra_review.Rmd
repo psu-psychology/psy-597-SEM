@@ -25,7 +25,7 @@ code.r{ font-size: 20px; }
 
 ```{r setup, include=FALSE}
 if (!require(pacman)) { install.packages("pacman"); library(pacman) }
-p_load(knitr, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR)
+p_load(knitr, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR, matrixcalc)
 knitr::opts_chunk$set(echo = TRUE) #print code by default
 options(digits=3) 
 ```
@@ -103,6 +103,177 @@ Phys_Dis -> Cog_Fun;
 
 In this model, the effects of background variables (age, sex, education) on cognitive functioning are entirely mediated by physical disability. This is a stronger hypothesis, but it all relates to the original covariance matrix of these data. That is, does this model provide a good representation of the *structure* of the covariance matrix?
 
+# Types of matrices
+
+Remember that matrices are defined by rows (the first dimension) and columns (the second dimension):
+
+$$
+\underset{m \times n}{\mathbf{A}} = \begin{bmatrix}
+   a_{11} & a_{12} & a_{13} \\
+   a_{21} & a_{22} & a_{23} \\
+   a_{31} & a_{32} & a_{33} \\
+   a_{41} & a_{42} & a_{43}
+ \end{bmatrix}
+$$
+
+And a position in the matrix is specific by subscripting according to the row and column: $a_{11}$.
+
+## Square
+
+A square matrix has the same number of rows and columns. Covariance matrices are always square.
+
+$$
+\underset{n \times n}{\mathbf{A}} = \begin{bmatrix}
+   a_{11} & a_{12} & a_{13} & a_{14} \\
+   a_{21} & a_{22} & a_{23} & a_{24} \\
+   a_{31} & a_{32} & a_{33} & a_{34} \\
+   a_{41} & a_{42} & a_{43} & a_{44}
+ \end{bmatrix}
+$$
+
+
+## Symmetric
+
+A symmetric matrix a square matrix that is identical when transposed. That is, flipping the rows and columns has no effect. Another way to think of it is that the off-diagonal structure (upper triangle and lower triangle) is identical.
+
+$$
+\begin{align}
+\underset{n \times n}{\mathbf{A}} &= \begin{bmatrix}
+   a & ab & ac & ad \\
+   ab & b & bc & bd \\
+   ac & bc & c & cd \\
+   ad & bd & cd & d
+ \end{bmatrix} \\
+ \cr
+ \mathbf{A} &= \mathbf{A}'
+\end{align}
+$$
+
+This is pretty close to the structure we'll see in much of the class -- with $ab$ representing some function of both $a$ and $b$ (e.g., covariance).
+
+## Diagonal
+
+A diagonal matrix is a special case of a square symmetric matrix in which there are values along the diagonal, but zeros elsewhere:
+
+$$
+\begin{align}
+\underset{n \times n}{\mathbf{A}} &= \begin{bmatrix}
+   a & 0 & 0 & 0 \\
+   0 & b & 0 & 0 \\
+   0 & 0 & c & 0 \\
+   0 & 0 & 0 & d
+ \end{bmatrix} \\
+ \cr
+ \mathbf{A} &= \mathbf{A}'
+\end{align}
+$$
+
+### Matrix trace
+
+The *trace* of a square matrix is the sum of elements along the diagonal:
+
+$$ tr(\mathbf{A}) = a + b + c + d $$
+
+Or more generally, if the matrix is $n \times n$:
+
+$$ tr(\mathbf{A}) = \sum_{i=1}^{n}{a_{ii}} = a_{11} + a_{22} + ... + a_{nn} $$
+
+
+## Identity
+
+An identity matrix is a special case of a diagonal matrix in which the elements of the diagonal are all 1:
+
+$$
+\underset{n \times n}{\mathbf{I}} = \begin{bmatrix}
+   1 & 0 & 0 & 0 \\
+   0 & 1 & 0 & 0 \\
+   0 & 0 & 1 & 0 \\
+   0 & 0 & 0 & 1
+\end{bmatrix}
+$$
+
+Why would this be useful? Mostly it helps make matrix multiplication work, but for now, just remember that any matrix multiplied by an identity matrix is unchanged. Just like multiplying a number by 1:
+
+Here's a square matrix
+```{r}
+A <- matrix(rnorm(25), nrow=5, ncol=5)
+print(A)
+```
+
+And now multiplied by $\mathbf{I}$:
+```{r}
+A %*% diag(5)
+```
+
+#Matrix addition and subtraction
+
+Matrix addition and subtraction are straightforward. These operations are applied elementwise:
+
+$$
+\mathbf{A} = \begin{bmatrix} 
+10 & 5 \\
+9 & 1
+\end{bmatrix}
+, \enspace
+\mathbf{B} = \begin{bmatrix} 
+2 & 1 \\
+20 & 0
+\end{bmatrix}, \enspace
+\textrm{then }
+\mathbf{A}-\mathbf{B}=
+\begin{bmatrix} 
+8 & 4 \\
+-11 & 1
+\end{bmatrix}
+$$
+
+Note that matrices must be of the same *dimension* (i.e., number of rows and columns) to be subtracted or added.
+
+#Matrix multiplication
+
+Multiplication is more complex.
+
+##Multiplication of a matrix by a scalar value
+
+To multiply a matrix $\mathbf{X}$ by a (scalar) constant $a$, one simply multiplies all elements of $\mathbf{X}$ by $a$:
+
+$$
+\mathbf{A} = \begin{bmatrix} 
+10 & 5 \\
+9 & 1
+\end{bmatrix}, \enspace
+k=2, \enspace
+k\mathbf{A} = \begin{bmatrix} 
+20 & 10 \\
+18 & 2
+\end{bmatrix}
+$$
+
+## Multiplication of a matrix by another matrix
+
+Multiplication is a more complex operation when both objects are matrices. First, the order matters, such that $\mathbf{AB}$ is not (usually) the same as $\mathbf{BA}$. This gives rise to the terms 'pre-multiplication' and 'post-multiplication', though we don't need those much in SEM. Second, if we are computing $C = AB$, then the number of columns in A must match the number of rows in B:
+
+$$
+\underset{n \times k}{\mathbf{C}} = \underset{n \times p}{\mathbf{A}} \cdot \underset{p \times k}{\mathbf{B}}
+$$
+Thus, the resulting matrix $\mathbf{C}$ has the number of rows of $\mathbf{A}$ and the number of columns of $\mathbf{B}$. Matrices that can be multiplied are called 'compatible' or 'comformable.' Matrices in which the *inner dimensions* (i.e., columns of $\mathbf{A}$, rows of $\mathbf{B}$) do not match are called 'incompatible' or 'non-conformable.' These cannot be multiplied.
+
+How does matrix multiplication work? One multiplies the elements of the *i*th row of $\mathbf{A}$ by the elements of the *j*th column of $\mathbf{B}$, then sums up these values into the *i*th row and *j*th column of $\mathbf{C}$. Like so:
+
+$$c_{ij} = \sum_{k=1}^{p} a_{ik} b_{kj}$$
+
+![<http://texample.net/tikz/examples/matrix-multiplication>](matrix_multiplication.png)
+
+Matrix division is not commonly discussed, but it is conceptually related to the idea of an inverse. If you think of single numbers:
+
+$$c = \frac{x}{y} \implies xy^{-1}$$
+Likewise, matrix division can be thought of as:
+
+$$\mathbf{AB}^{-1}$$
+As mentioned above, matrix multiplication is not (usually) commutative, so the concept of matrix division is tricky and not especially useful or prevalent.
+
+If you'd like to learn more about matrix multiplication, I would suggest reading [this](https://www.khanacademy.org/math/precalculus/precalc-matrices/properties-of-matrix-multiplication/a/matrix-multiplication-dimensions).
+
 # Solving systems of equations using algebra
 
 Briefly, figuring out the parameter estimates in models containing more than one outcome depends on solving multiple regression equations. As in high-school algebra, to solve uniquely a set of $n$ unknown variables, one needs $n$ equations. One can think of this as a system with zero degrees of freedom.
@@ -178,7 +349,7 @@ solve(A,b)
 Handy!
 
 ##Matrix inversion
-How did it do that? A bit of detail (here)[https://www.varsitytutors.com/hotmath/hotmath_help/topics/solving-systems-of-linear-equations-using-matrices]. In this case, if $\mathbf{A}$ is square (equal number of rows and columns) and all of the rows are independent (i.e., no two equations are the same or multiples of each other), we can solve this system by using the inverse of the $\mathbf{A}$ matrix, $\mathbf{A}^{-1}$:
+How did it do that? A bit of detail [here](https://www.varsitytutors.com/hotmath/hotmath_help/topics/solving-systems-of-linear-equations-using-matrices). In this case, if $\mathbf{A}$ is square (equal number of rows and columns) and all of the rows are independent (i.e., no two equations are the same or multiples of each other), we can solve this system by using the inverse of the $\mathbf{A}$ matrix, $\mathbf{A}^{-1}$:
 
 ```{r}
 solve(A)
@@ -362,64 +533,6 @@ And for comparison, the output of `summary(lm(m))`:
 summary(m)
 ```
 
-#Matrix addition and subtraction
-
-Stepping back a bit, it is useful to note that matrix addition and subtraction is straightforward. Specifically, matrix addition and subtraction are applied elementwise:
-
-$$
-\mathbf{A} = \begin{bmatrix} 
-10 & 5 \\
-9 & 1
-\end{bmatrix}
-, \enspace
-\mathbf{B} = \begin{bmatrix} 
-2 & 1 \\
-20 & 0
-\end{bmatrix}, \enspace
-\textrm{then }
-\mathbf{A}-\mathbf{B}=
-\begin{bmatrix} 
-8 & 4 \\
--11 & 1
-\end{bmatrix}
-$$
-
-Note that matrices must be of the same *dimension* (i.e., number of rows and columns) to be subtracted or added.
-
-#Matrix multiplication
-
-To multiply a matrix $\mathbf{X}$ by a (scalar) constant $a$, one simply multiplies all elements of $\mathbf{X}$ by $a$:
-
-$$
-\mathbf{A} = \begin{bmatrix} 
-10 & 5 \\
-9 & 1
-\end{bmatrix}, \enspace
-k=2, \enspace
-k\mathbf{A} = \begin{bmatrix} 
-20 & 10 \\
-18 & 2
-\end{bmatrix}
-$$
-Multiplication is a more complex operation when both objects are matrices. First, the order matters, such that $\mathbf{AB}$ is not (usually) the same as $\mathbf{BA}$. Second, if we are computing $C = AB$, then the number of columns in A must match the number of rows in B:
-
-$$
-\underset{n \times k}{\mathbf{C}} = \underset{n \times p}{\mathbf{A}} \cdot \underset{p \times k}{\mathbf{B}}
-$$
-Thus, the resulting matrix $\mathbf{C}$ has the number of rows of $\mathbf{A}$ and the number of columns of $\mathbf{B}$. How does this happen? One multiplies the elements of the *i*th row of $\mathbf{A}$ by the elements of the *j*th column of $\mathbf{B}$, then sums up these values into the *i*th row and *j*th column of $\mathbf{C}$. Like so:
-
-$$c_{ij} = \sum_{k=1}^{p} a_{ik} b_{kj}$$
-
-![<http://texample.net/tikz/examples/matrix-multiplication>](matrix_multiplication.png)
-
-Matrix division is not commonly discussed, but it is conceptually related to the idea of an inverse. If you think of single numbers:
-
-$$c = \frac{x}{y} \implies xy^{-1}$$
-Likewise, matrix division can be thought of as:
-
-$$\mathbf{AB}^{-1}$$
-As mentioned above, matrix multiplication is not (usually) commutative, so the concept of matrix division is tricky and not especially useful or prevalent.
-
 # Positive definite matrices
 
 In SEM, we typically need the covariance matrix to be *positive definite*. Although the math behind this is more complex than we'll cover in class, there are several important properties of positive definite matrices that we can verify in our data prior (or as part of) SEM estimation.
@@ -486,8 +599,129 @@ $$\nu_{i} = w_{i,1} x_1 + w_{i,2}x_2 + ... w_{i,p}$$
 
 The similarity to a regression equation is notable in that we've generated a new criterion of sorts $\nu_i$ that is a combination of the variables in a matrix $\mathbf{X}$ that maximizes shared variance. Importantly, though, the order of the eigenvectors matters. The first gets to 'chew on' all observed covariation among variables in $\mathbf{X}$, the second gets its leftovers, the third gets the leftovers of the second, and so on. Thus, the weights for the *i*th eigenvector are estimated to optimally explain whatever variation remains in the matrix at the *i*th iteration.
 
-Each eigenvector has a corresponding eigenvalue that summarizes how strongly the data coalesce around that direction. Said differently, larger eigenvalues indicate that more shared variability is explained by that eigenvector. Indeed, there is a mathematical relationship between variance explained and eigenvalues.
+Each eigenvector has a corresponding eigenvalue that summarizes how strongly the data coalesce around that direction. Said differently, larger eigenvalues indicate that more shared variability is explained by that eigenvector. Importantly, we need to consider the total variability in the covariance matrix -- that is, how much 'stuff' is there to explain? This is given by the sum of the variances, which falls along the diagonal of the covariance matrix. Recall: this is *trace* of the matrix.
 
+Here's the covariance matrix of four-variable housing data:
+```{r}
+cmat <- cov(BostonSmall)
+print(cmat)
+```
+
+And thus, the total variation of the covariance matrix is the *sum* of the variances along the diagonal:
+
+```{r}
+sum(diag(cmat))
+```
+
+Indeed, there is a mathematical relationship between variance explained and eigenvalues. In an $n \times n$ matrix, there will always be exactly $n$ eigenvalues and $n$ eigenvectors. The eigenvectors jointly explain *all* variation in the matrix, by definition. You can think of this as a zero degree of freedom solution to the data matrix -- it 'explains' things perfectly. Thus, the total variance of the matrix is equal to the sum of the eigenvalues $\mathbf{\lambda}$.
+
+$$
+\sum_{i=1}^{n} \lambda_i = tr(\mathbf{A})
+$$
+
+Let's verify this in our covariance matrix. The sum of the eigenvalues is:
+```{r}
+eigendecomp <- eigen(cmat) #eigen computes the eigendecomposition of a matrix, here the covariance matrix
+sum(eigendecomp$values)
+```
+
+Therefore, the proportion of variance explained by the *i*th eigenvalue is simply its value normalized by the sum of all eigenvalues:
+
+$$
+r^2_{\lambda_i} = \frac{\lambda_i}{\sum_{k=1}^{n} \lambda_k}
+$$
+
+```{r}
+round(eigendecomp$values/sum(eigendecomp$values), 3)
+```
+
+Or the cumulative variance explained:
+```{r}
+round(cumsum(eigendecomp$values)/sum(eigendecomp$values), 3)
+```
+
+One small gotcha: note that the `prcomp()` function in `R`, which runs PCA (eigendecomposition) on a data matrix, returns the *square roots* of the eigenvalues, so you have to square them to get the variance explained right:
+```{r}
+prcompdemo <- prcomp(BostonSmall)
+round(prcompdemo$sdev^2/sum(prcompdemo$sdev^2), 3)
+```
+
+## How does eigendecomposition relate back to positive definiteness?
+
+Above, we stated that a positive definite matrix must have eigenvalues that are all *positive*. Why is that? Let's start by noticing that in our eigendecomposition of the Boston housing data, we considered five variables: `r paste(names(BostonSmall), collapse=", ")`. But notice how the fifth eigenvector explained essentially no variance:
+
+```{r}
+round(eigendecomp$values/sum(eigendecomp$values), 3)
+```
+
+Technically, the fifth eigenvalue is positive, but it is quite small relative to the total variance:
+
+```{r}
+eigendecomp$values[5]
+```
+
+What does this mean? We can explain virtually all of the covariation in the data using a smaller number of *latent* directions in the data. This relates back to our discussion of minimizing the difference between the model-predicted covariance matrix $\mathbf{\Sigma}$ and the observed covariance $\mathbf{S}$. If we think of the covariance matrix in a form akin to multiple regression, one can think that we are trying to explain each variable in the matrix as a function of itself (i.e., variance) and other variables (i.e., covariances). In a way, then, if we have 10 variables in a covariance matrix, then we have 10 equations and 10 unknowns (a bit of hand-waving here to avoid technical distractions). 
+
+However, what if we can explain *all* of the data (100% variance) with only 9 equations? This means that we have a *rank-deficient* matrix that is *not* positive definite. Said differently, this means there is not enough data to solve for each variable uniquely (i.e., the model is not identified, as we will discuss later). Thinking in regression terms, it could be a situation in which there are an infinite number of solutions for $B_1$ and $B_2$ that give the same fit to the criterion. In algebra, this is also called *linear dependency* and is the extreme end of *multicollinearity*.
+
+In a covariance matrix, if one variable is a perfect linear combination of other variables (one or more), then it is redundant -- one could reproduce the entire covariance matrix knowing nothing about the redundant variable. The simplest case is when one variable is a linear combination of the others, such as: $Y = 2X$. Consider how this system of equations cannot be solved (more unknowns than equations):
+
+$$
+\begin{align}
+a &= 2x + y + 3 \\
+b &= 9x + 5y - 1
+\end{align}
+$$
+
+whereas this system has an infinite number of solutions:
+$$
+\begin{align}
+x + y + z &= 1 \\
+x + y + 2z &= 3
+\end{align}
+$$
+
+Because $x = -1 -y$, then $x$ and $y$ cannot be uniquely solved. This system is called *underdetermined*, meaning that there are fewer unique equations than unknowns. More [here](https://en.wikipedia.org/wiki/Underdetermined_system).
+
+Here, we have something close in that the crim and log_crim are both in the dataset -- because it's a log transformation, it's not linear, so not *completely* redundant.
+
+But let's mess things up just for fun by adding a redundant variable:
+
+```{r}
+BostonSmall$blowup <- 2*BostonSmall$crim
+eigen(cov(BostonSmall))
+```
+Bless `R`, it tried hard. But you'll see that the 6th eigenvalue is negative. The covariance matrix is now not positive definite (i.e., it is singular) -- this is bad and will typically blow up any SEM program. Plus, such a matrix is not interesting in principle.
+
+**Take home**: Always examine your covariance matrix. And in general, also look at the eigenvalues to ensure that your matrix is positive definite.
+
+There's also a handy function, `is.positive.definite()` in the `matrixcalc` package for checking the positive definiteness of a matrix:
+
+```{r}
+is.positive.definite(cov(BostonSmall))
+```
+
+### Matrix determinant
+
+We said above that a covariance matrix must be invertible for SEM, which relates to having positive eigenvalues and a determinant. The determinant of a square matrix is the serial product of the $n$ eigenvalues: 
+
+$$
+\prod_{i=1}^{n} \lambda_i = \lambda_1 \cdot \lambda_2 \cdot \ldots \lambda_n
+$$
+
+Thus, eigenvalues of zero lead to a zero determinant, negative eigenvalues may lead to a negative determinant, and so on. Sometimes, an eigenvalue is very close to zero (e.g., $10^{-8}$), leading to difficulties inverting the matrix, sometimes called a 'computationally singular' matrix (i.e., the computer can't deal with such a tiny eigenvalue).
+
+## Take home messages about eigenvalues and eigenvectors
+
+1. The eigenvalue summarizes the strength of a latent *direction* in the data. Each eigenvalue has a corresponding eigenvector, which quantifies the *direction* -- that is, the weighted linear combination of observed variables. Thus, larger eigenvalues indicate latent components (eigenvectors) that explain more of the total variability (covariation).
+
+2. Note that if you compute an eigendecomposition on a *correlation* matrix, all variances are 1.0 (the diagonal). Thus, eigenvalues are expressed in terms of number of variables explained. Thus, an eigenvalue of 3 in a covariance matrix of 10 variables indicates that the corresponding eigenvector accounts for 3 variables' worth of covariation. This is where Kaiser's rule in factor analysis comes from (as we'll talk about in the coming weeks).
+
+3. If all variables are standardized (z-scored, unit-normalized, whatever you want to call it) and are perfectly uncorrelated (orthogonal), then each eigenvalue will be 1.0. Thus, if there are 10 uncorrelated variables, there are 10 completely unique directions in the multivariate space.
+
+4. Near zero eigenvalues indicate that one or more variables in the covariance matrix can be explained by other variables.
+
+5. Eigenvectors specify the combination of observed variables that form the *direction*. Thus, they provide information about what variables are associated to form, potentially, a meaningful latent variable.
 
 Additional details on PCA and eigendecomposition [here](http://stats.stackexchange.com/questions/2691/making-sense-of-principal-component-analysis-eigenvectors-eigenvalues
 ).
