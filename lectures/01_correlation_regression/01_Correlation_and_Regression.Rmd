@@ -25,7 +25,8 @@ code.r{ font-size: 20px; }
 
 ```{r setup, include=FALSE}
 if (!require(pacman)) { install.packages("pacman"); library(pacman) }
-p_load(knitr, ppcor, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR)
+p_load(knitr, ppcor, tidyverse, lavaan, modelr, mlbench, 
+       lattice, lm.beta, semPlot, DiagrammeR, relaimpo)
 knitr::opts_chunk$set(echo = TRUE) #print code by default
 options(digits=3) 
 ```
@@ -567,23 +568,61 @@ $$ r_{Y(X1 \cdot X2)} = \frac{r_{Y,X1} - r_{Y,X2}r_{X1,X2}}{\sqrt{1-r_{X1,X2}^2}
 
 - $\frac{a}{a+d}$ is the partial correlation of $X1$ with $Y$, controlling for $X2$.
 
-## Decomposing variance explained in regression using (standardized coefficients, part, or partial correlations)
-Determining the 
+## Decomposing variance explained in regression (standardized coefficients, part, or partial correlations)
+
+There is not a single best measure of association between a predictor and criterion in multiple regression. Rather, the challenge is that regression coefficients, part correlations, and partial correlations all represent the association of a predictor with a criterion conditional on the other predictors in the model.
+
+The good news is that standardized regression coefficients are interpretable because they are on the same scale and have a known interpretation (relationship between $Y$ and $X_1$ at a given level of $X_2 ... X_p$). The bad news is that they do not sufficiently weight the direct effect of a predictor on the criterion, which is often of substantive interest (Johson and Lebreton, 2004).
+
+There are additional measures of the relative importance of predictors in a regression model that go beyond what we will cover in class. I would suggest reading [this paper](https://www.jstatsoft.org/article/view/v017i01) and using the `relaimpo` package to examine relative importance of predictors in regression.
+
+One intuitive, but flawed measure, of partial association is the product of the standardized coefficient with the correlation of the predictor and the criterion (Hoffman, 1960):
+
+$$
+r^2_{Y,X1\cdot (X_2...X_p)} = \beta_{X_1}r_{Y,X_1}
+$$
+
+By using the marginal correlation (i.e., the bivariate relationship, averaging over all other predictors), the sum of these estimates across all predictors equals the model $R^2$.
+
+If you're interested in the relative importance of a predictor in a multiple regression model, I would suggest using the Lindeman, Merenda and Gold ('lmg') method of computing relative importance over standardized coefficients, Hoffman's method, part, or partial correlation. It's described in the paper above. Here's a quick example:
+
 ```{r}
-#some work on relative importance in multiple regression, nonequivalence of R2 measures with standardized betas
-#m5 <- lm(cmedv ~ log_crim + nox -1, BostonSmall_std)
-#summary(m5)
+m_relimport <- lm(cmedv ~ log_crim + nox, BostonSmall)
+stdbetas <- lm.beta(m_relimport)$standardized.coefficients #standardized coefficients
 
-m5 <- lm(cmedv ~ log_crim + nox, BostonSmall)
-lm.beta(lm(cmedv ~ log_crim + nox, BostonSmall))
+stdbetas["log_crim"] * cor(BostonSmall$cmedv, BostonSmall$log_crim)
+stdbetas["nox"] * cor(BostonSmall$cmedv, BostonSmall$nox)
 
-BostonSmall <- BostonSmall %>% add_predictions(m5)
-coef(m5)["log_crim"] * cov(BostonSmall_std$cmedv, BostonSmall_std$log_crim)
-coef(m5)["nox"] * cor(BostonSmall_std$cmedv, BostonSmall_std$nox)
-library(relaimpo)
-xx <- calc.relimp(m5, type = c("lmg", "first", "last", "betasq", "pratt", "genizi", "car"))
+#here is the broader set of relatience importance measures to consider (esp. 'lmg')
+calc.relimp(m_relimport, type = c("lmg", "first", "last", "betasq", "pratt", "genizi", "car"))
 
-mu <- rep(2,3)
+```
+
+As a reminder, the complexity of partial relationships in multiple regression largely comes from the conceptual (and statistical) difficulty of handling the relationship among predictors. If the predictors are uncorrelated with each other, then everything you know from single-predictor regression holds true -- for example, the equivalence of bivariate correlation and standardized coefficients.
+
+A useful way to think about this is that if the predictors are truly orthogonal to each other, then if I regress $\mathbf{y}$ on $\mathbf{x}_1$ alone, none of the variance accounted for by $\mathbf{x}_2$ has been removed. Indeed, one could take the residuals of the $Y ~ X_1$ regression into a new model:
+
+$$
+\begin{align}
+r_{X_1,X_2} :&= 0 \\
+\hat{Y} &= B_0 + B_1 X_1 + \varepsilon \\
+R_{X_1} &= Y - \hat{Y} \\
+\hat{R}_{X_1} &= B_0 + B_2 X_2 + \varepsilon
+\end{align}
+$$
+
+The coefficients for $B_1$ and $B_2$ will be identical when estimated jointly:
+
+$$
+\hat{Y} = B_0 + B_1 X_1 + B_2 X_2 + \varepsilon
+$$
+
+###Equivalence of coefficients to single-predictor regression when predictors are orthogonal (uncorrelated) 
+
+Here's a quick demo. First a structure in which $X_1$ and $X_2$ are associated with, $Y$, but not each other. The underlying correlation structure is:
+
+```{r}
+mu <- rep(0,3)
 Sigma <- tribble(
   ~y, ~x1, ~x2,
   1, 0.4, 0.4,
@@ -591,34 +630,96 @@ Sigma <- tribble(
   0.4, 0, 1
 )
 
-sim_nocorr <- data.frame(mvrnorm(n=1000, mu=mu, Sigma=Sigma))
+print(Sigma)
+```
+
+Note that we can simulate data with this structure, but the correlations will not be *exactly* what we ask for because of sampling variability. Thus, the betas under the single-predictor and two-predictor models will be *very* close, but not identical:
+```{r}
+sim_nocorr <- data.frame(mvrnorm(n=5000, mu=mu, Sigma=Sigma))
 names(sim_nocorr) <- c("y", "x1", "x2")
 cor(sim_nocorr) #verify that x1 and x2 correlate with y, but not each other
+```
+
+First, here are standardized betas under joint versus single-predictor models:
+```{r}
 lm.beta(lm(y ~ x1 + x2, sim_nocorr))
+lm.beta(lm(y ~ x1, sim_nocorr))
+lm.beta(lm(y ~ x2, sim_nocorr))
+```
 
+Semipartial correlation of $Y$ with $X_1$ net $X_2$:
+```{r}
 with(sim_nocorr, spcor.test(y, x1, x2))
-with(sim_nocorr, spcor.test(y, x2, x1))
+```
 
-#add correlation of 0.2 between x1 and x2
+Semipartial correlation of $Y$ with $X_2$ net $X_1$:
+```{r}
+with(sim_nocorr, spcor.test(y, x2, x1))
+```
+
+Bivariate correlation of $Y$ with $X_1$:
+```{r}
+with(sim_nocorr, cor(y, x1))
+```
+
+Bivariate correlation of $Y$ with $X_2$:
+```{r}
+with(sim_nocorr, cor(y, x2))
+```
+
+Now, the equivalence of coefficients estimated sequentially (one predictor at a time) versus jointly under orthogonal predictors:
+```{r}
+#demonstrate equivalence of sequential versus join estimation under orthogonal predictors
+m1 <- lm(y ~ x1, sim_nocorr)
+summary(m1)
+
+sim_nocorr$resid_x1 <- resid(m1)
+m2 <- lm(resid_x1 ~ x2 - 1, sim_nocorr) #remove intercept since that was pulled out in m1
+summary(m2)
+
+m3 <- lm(y ~ x1 + x2, sim_nocorr)
+summary(m3)
+
+```
+
+###Non-equivalence of coefficients when predictors are correlated
+
+Now add a correlation of 0.6 between the predictors and repeat the various tests:
+```{r}
 Sigma <- tribble(
   ~y, ~x1, ~x2,
   1, 0.4, 0.4,
   0.4, 1, 0.6,
   0.4, 0.6, 1
 )
+print(Sigma)
 
-sim_withcorr <- data.frame(mvrnorm(n=1000, mu=mu, Sigma=Sigma))
+sim_withcorr <- data.frame(mvrnorm(n=5000, mu=mu, Sigma=Sigma))
 names(sim_withcorr) <- c("y", "x1", "x2")
 
-#now, semipartial and standardized beta are not equivalence
+#now, semipartial and standardized beta are not equivalent
+#likewise, bivariate correlation does not match 
 lm.beta(lm(y ~ x1 + x2, sim_withcorr))
+lm.beta(lm(y ~ x1, sim_withcorr))
+lm.beta(lm(y ~ x2, sim_withcorr))
 
 with(sim_withcorr, spcor.test(y, x1, x2))
 with(sim_withcorr, spcor.test(y, x2, x1))
 
+with(sim_withcorr, cor(y, x1))
+with(sim_withcorr, cor(y, x2))
 
+#demonstrate *non*-equivalence of sequential versus join estimation under correlated predictors
+m1 <- lm(y ~ x1, sim_withcorr)
+summary(m1)
+
+sim_withcorr$resid_x1 <- resid(m1)
+m2 <- lm(resid_x1 ~ x2 - 1, sim_withcorr) #remove intercept since that was pulled out in m1
+summary(m2)
+
+m3 <- lm(y ~ x1 + x2, sim_withcorr)
+summary(m3)
 ```
-
 
 # Assumptions of regression (from Kline)
 
@@ -696,7 +797,7 @@ $$
 
 # Use lavaan for simple multiple regression
 
-We've now reviewed many fundamental topics in regression. And the next piece of good news is that SEM builds directly on regression methods. More specifically, the ideal of 'structural equations' refers to the fact that we have more than one equation representing a model of covariance structure in which we (usually) have multiple criterion variables and multiple predictors.
+We've now reviewed many fundamental topics in regression. And the next piece of good news is that SEM builds directly on regression methods. More specifically, the idea of 'structural equations' refers to the fact that we have more than one equation representing a model of covariance structure in which we (usually) have multiple criterion variables and multiple predictors.
 
 Let's return to our house pricing example above. We can estimate the same multiple regression models using the `lavaan` package that we'll be using for more complex SEMs. And the syntax even has many similarities with `lm()`.
 
