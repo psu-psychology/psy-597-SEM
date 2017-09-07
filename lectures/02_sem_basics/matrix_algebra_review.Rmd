@@ -715,7 +715,7 @@ Thus, eigenvalues of zero lead to a zero determinant, negative eigenvalues may l
 
 1. The eigenvalue summarizes the strength of a latent *direction* in the data. Each eigenvalue has a corresponding eigenvector, which quantifies the *direction* -- that is, the weighted linear combination of observed variables. Thus, larger eigenvalues indicate latent components (eigenvectors) that explain more of the total variability (covariation).
 
-2. Note that if you compute an eigendecomposition on a *correlation* matrix, all variances are 1.0 (the diagonal). Thus, eigenvalues are expressed in terms of number of variables explained. Thus, an eigenvalue of 3 in a covariance matrix of 10 variables indicates that the corresponding eigenvector accounts for 3 variables' worth of covariation. This is where Kaiser's rule in factor analysis comes from (as we'll talk about in the coming weeks).
+2. Note that if you compute an eigendecomposition on a *correlation* matrix, all variances are 1.0 (the diagonal). Thus, eigenvalues are expressed in terms of number of variables explained. Thus, an eigenvalue of 3 in a correlation matrix of 10 variables indicates that the corresponding eigenvector accounts for 3 variables' worth of covariation. This is where Kaiser's rule in factor analysis comes from (as we'll talk about in the coming weeks).
 
 3. If all variables are standardized (z-scored, unit-normalized, whatever you want to call it) and are perfectly uncorrelated (orthogonal), then each eigenvalue will be 1.0. Thus, if there are 10 uncorrelated variables, there are 10 completely unique directions in the multivariate space.
 

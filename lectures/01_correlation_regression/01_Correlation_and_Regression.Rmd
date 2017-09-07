@@ -633,9 +633,8 @@ Sigma <- tribble(
 print(Sigma)
 ```
 
-Note that we can simulate data with this structure, but the correlations will not be *exactly* what we ask for because of sampling variability. Thus, the betas under the single-predictor and two-predictor models will be *very* close, but not identical:
 ```{r}
-sim_nocorr <- data.frame(mvrnorm(n=5000, mu=mu, Sigma=Sigma))
+sim_nocorr <- data.frame(MASS::mvrnorm(n=5000, mu=mu, Sigma=Sigma, empirical=TRUE))
 names(sim_nocorr) <- c("y", "x1", "x2")
 cor(sim_nocorr) #verify that x1 and x2 correlate with y, but not each other
 ```
@@ -694,7 +693,7 @@ Sigma <- tribble(
 )
 print(Sigma)
 
-sim_withcorr <- data.frame(mvrnorm(n=5000, mu=mu, Sigma=Sigma))
+sim_withcorr <- data.frame(MASS::mvrnorm(n=5000, mu=mu, Sigma=Sigma, empirical=TRUE))
 names(sim_withcorr) <- c("y", "x1", "x2")
 
 #now, semipartial and standardized beta are not equivalent
