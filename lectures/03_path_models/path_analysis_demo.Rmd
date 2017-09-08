@@ -1,0 +1,150 @@
+---
+title: "Path Analysis Demo"
+author: "Michael Hallquist"
+date: "9/7/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, tidyverse, lavaan, semPlot)
+options(digits=3)
+```
+
+#Simulate data
+```{r}
+mu <- rep(0,3)
+Sigma <- tribble(
+  ~a, ~b, ~c,
+  1, 0.2, 0.3,
+  0.2, 1, 0.7,
+  0.3, 0.7, 1
+)
+
+abc = data.frame(MASS::mvrnorm(1000, mu=mu, Sigma=Sigma, empirical=TRUE))
+colnames(abc) = LETTERS[1:3]
+psych::describe(abc)
+cov(abc)
+```
+
+#simple model
+
+```{r}
+syntax <- '
+B ~ A
+C ~ B
+'
+
+m <- sem(syntax, data=abc, meanstructure=FALSE)
+summary(m)
+semPaths(m)
+```
+
+Note that the residual variance estimates are also estimates of $1 - R^2$ because we have standardized variables.
+
+#Under the hood: parameter table
+
+```{r}
+parTable(m)
+```
+
+#Parameter estimates
+
+```{r}
+parameterestimates(m)
+```
+
+Note that the variance of A is exogenous, but estimated. More specifically, it will be set at the sample estimate, meaning that the variance of A is not part of the likelihood function and does not contribute to any fit statistics.
+
+#Model-implied covariance
+```{r}
+fitted(m)
+```
+
+Notice how low the covariance is between A and C compared to our groundtruth value of 0.7. That is, the association between A and C is not fully explained by the indirect association of A with C via B.
+
+#Model modification
+
+We know from our simulation that there is a relationship between A and C that is not entirely attributable to the indirect effect of A on B via B. Thus, we have an *omitted path* problem in which a key covariance term is not captured by our model.
+
+We will cover modification indices in more detail soon, but for now, know that the `modificationIndices` function in `lavaan` provides estimates of how much the model fit ($\chi^2$) would fit if a specific parameter were added to the model.
+
+```{r}
+modificationIndices(m)
+```
+
+## Equivalent models
+
+We will return to the issue of models that fit the data equall well, but it's important to note that in this case, there is only one degree of freedom, and four equally good possibilities for capturing the relationship between A and C. This highlights the importance of having clear theoretical predictions about which variables are correlated versus which are likely to be (weak) causes or effects. As in regression, one can reverse predictor versus criterion with minimal change in syntax, but the choice to do so should be *theoretically* motivated. Likewise, in SEM, if one does now have clear predictions about the relationship between two variables, sometimes an undirected covariance between them is the appropriately weak parameterization.
+
+```{r}
+syn2 <- '
+B ~ A
+C ~ B
+A ~ C
+'
+
+m2 <- sem(syn2, abc, meanstructure=FALSE)
+summary(m2)
+```
+
+Note that we now have a just-identified model (0 degrees of freedom) because we have 3 variances and 3 covariances in $\mathbf{S_{XX}}$ and we have 6 free parameters estimated here.
+
+##making the remaining covariance trivial
+
+We could also conceive of a situation in which the model that lacks an $A-C$ relationship is nevertheless reasonably good.
+
+```{r}
+mu <- rep(0,3)
+Sigma <- tribble(
+  ~a, ~b, ~c,
+  1, 0.2, 0.16,
+  0.2, 1, 0.7,
+  0.16, 0.7, 1
+)
+
+abc = data.frame(MASS::mvrnorm(1000, mu=mu, Sigma=Sigma, empirical=TRUE))
+colnames(abc) = LETTERS[1:3]
+psych::describe(abc)
+cov(abc)
+
+syntax <- '
+B ~ A
+C ~ B
+'
+
+m <- sem(syntax, data=abc, meanstructure=FALSE)
+summary(m)
+#semPaths(m)
+fitted(m)
+```
+We can see that the A-C relationship is 0.14 in the output and 0.16 in the groundtruth. Thus, we are capturing their association by modeling the indirect effect alone.
+
+#Ill conditioning
+```{r}
+sds <- c(1, 10, 100)
+abc_rescale <- cor2cov(cov(abc), sds)
+print(abc_rescale)
+```
+
+#indirect effects
+```{r}
+syntax <- '
+B ~ b1*A
+C ~ b2*B
+med := b1*b2
+'
+
+m_ind <- sem(syntax, data=abc, meanstructure=FALSE)
+summary(m_ind)
+#semPaths(m_ind)
+```
+
+##parTable for indirect effects
+
+```{r}
+parTable(m_ind)
+```
+
+Notice how there is an additional parameter estimated, but it is not *free* because it is a simple product of `b1` and `b2`.
