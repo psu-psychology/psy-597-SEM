@@ -39,7 +39,7 @@ For example, we might believe that emotion regulation is an important construct 
 
 Informal definitions of latent variables tend to emphasize the *conceptual* or *hypothetical* status of the latent variable. As Bollen (2012) notes, however, this may imply that the construct is pure fiction and may have no relationship to data. In SEM, we do not adopt this view. Rather, a positive account of latent variables is that they cannot be measured directly, but by examining relationships among observed variables, we can test models that corroborate or discorroborate their existence. Indeed, this is the core component *construct validation* in psychological science (Cronbach & Meehl, 1955; Clark & Watson, 1997).
 
-If we take seriously the notion that latent variables *cannot* be measured directly, an interesting thought experiment is to ask whether this is inherent in the construct, or reflects a limitation of our measurement tools. For example, the Standard Model in physics predicts that there is a 'quantum field' (a hypothetical construct) that gives rise to the specific mass of any particle. Without getting into the weeds, a limitation of this model is that it does not clearly explain *weak* interactions among some quantum particles (*W* and *Z*) thought to have huge mass. Decades ago, Higgs theorized the existence of a particle, the Higgs boson, that explains these interactions. This theory predated the ability to *measure* particles of this mass, precluding an empirical tests of the Higgs boson. In 2012, however, scientists at CERN were able to observe a new particle in exactly the region of mass predicted by Higgs, providing strong evidence of the Higgs boson.
+If we take seriously the notion that latent variables *cannot* be measured directly, an interesting thought experiment is to ask whether this is inherent in the construct, or reflects a limitation of our measurement tools. For example, the Standard Model in physics predicts that there is a 'quantum field' (a hypothetical construct) that gives rise to the specific mass of any particle. Without getting into the weeds, a limitation of this model is that it does not clearly explain *weak* interactions among some quantum particles (*W* and *Z*) thought to have huge mass. Decades ago, Higgs theorized the existence of a particle, the Higgs boson, that explains these interactions. This theory predated the ability to *measure* particles of this mass, precluding empirical tests of the Higgs boson. In 2012, however, scientists at CERN were able to observe a new particle in exactly the region of mass predicted by Higgs, providing strong evidence of the Higgs boson.
 
 Even though this observation is consistent with the theory (and the prediction was very precise to begin with), there is still the possibility that a) the conclusions are unreliable due to measurement error or instrumentation bias, and/or b) there could be alternative accounts of particle interactions that explain the data equally well. The first concern (measurement error, bias) was largely ruled out by multiple instrumentation checks, many repetitions, and independent replications in two different colliders. And although b) could be true, we would need the specifics (i.e., a framework with predictions) to compare the evidence for an alternative theory. Thus, barring an alternative account or new counterveiling observations, a construct that was previously only hypothetical has been corroborated by empirical observations.
 
@@ -51,7 +51,7 @@ What sorts of latent variables could become measured directly given the proper i
 
 ## Sample realization
 
-Bollen 2002, p. 612: A latent variable is a variable "for which there is no sample realization for at least some observations in a given sample"
+Bollen 2002, p. 612: A latent variable is a variable "for which there is no sample realization for at least some observations in a given sample."
 
 This general definition distinguishes between the *possible* values (in an abstract sense) versus the *realized* values in a specific dataset. Thus, if we have no realizations of the variable (i.e., direct measurements), yet we think that values exist according to our theory, that is a latent variable. The sample realization definition does not presuppose that the latent variable *cannot* be measured, just that we did not measure it. As Bollen (2012, p. 59) notes, "The definition assumes that all variables are latent until there are realizations for the individuals in a sample."
 
@@ -122,6 +122,7 @@ We'll delve into psychometric theory soon, but the essential idea of a 'true sco
 $$
 y_i = T_i + e_i
 $$
+
 ### Assumptions of true score definition
 
 1. No covariance between errors
@@ -134,7 +135,7 @@ There is a crucial distinction between indicators (observed) thought to *cause* 
 
 ## Reflective construct (aka reflective model)
 
-The typical view is that indicators *reflect* the effects of the latent variable. In this view, latent variables are *causes* and indicators are *effects*. For example, one might think that working memory causes individual differences in the ability to reverse the order a set of numbers mentally (e.g., converting 1-7-9-3-5 to 5-3-9-7-1). This is the basis for the notation of the common factor model, in which the arrows point from the latent construct to the indicators:
+The typical view is that indicators *reflect* the effects of the latent variable. In this view, latent variables are *causes* and indicators are *effects*. This is the basis for the notation of the common factor model, in which the arrows point from the latent construct to the indicators. For example, one might think that working memory causes individual differences in the ability to mentally reverse the order of a set of numbers (e.g., converting 1-7-9-3-5 to 5-3-9-7-1):
 
 ```{r}
 grViz("
@@ -147,10 +148,10 @@ digraph wm {
   'Working\nMemory';
   
   node [shape = box, fontname = Arial]
-  'digit-span'; 'n-back'; 'sequence\nrepetition'
+  'digit-reversal'; 'n-back'; 'sequence\nrepetition'
 
   # edges
-  'Working\nMemory' -> 'digit-span';
+  'Working\nMemory' -> 'digit-reversal';
   'Working\nMemory' -> 'n-back';
   'Working\nMemory' -> 'sequence\nrepetition';
 }")
@@ -198,7 +199,8 @@ In this scenario, the exogenous, potentially correlated, observed variables are 
 
 ## Reflective versus formative: an issue of the indicators?
 
-Bollen cautions against defining a latent variable on the basis of a given set of indicators in a specific model. That is, if the latent variable reflects a true, if unobserved, entity, then wedding our conception of it to the variables we measured and modeled is short-sighted. Furthermore, a model may include observed variables that are *effects* of the latent variable as well as variables that are *causes* of the latent variable. Thus, there is not a bright line between *reflective* and *formative* models, respectively. 
+Bollen cautions against defining a latent variable on the basis of a given set of indicators in a specific model. That is, if the latent variable reflects a true, if unobserved, entity, then wedding our conception of it to the variables we measured and modeled is short-sighted. Furthermore, a model may include observed variables that are *effects* of the latent variable as well as variables that are *causes* of the latent variable. Thus, there is not a bright line between *reflective* and *formative* models, respectively.
+
 # What is a measurement model?
 
 In essence, measurement models in SEM seek to map observed data onto hypothetical constructs (Kenny). More formally, measurement models specify the relationship between latent variables and observed variables.
@@ -212,7 +214,7 @@ In most of conventional SEM, latent variables are thought to be normally distrib
 2. Meaningful, but unmodeled, residual variation in the indicators of substantive latent variables. These are the disturbances.
 3. Potential covariation among disturbances capturing meaningful residual association due to unknown latent causes.
 
-Disturbances are thought to reflect a combination of a) random error (related to reliability); and b) specific and reliable variance in the indicator not accounted for by the substantive factor.
+Disturbances are thought to reflect a combination of a) random error (related to reliability); and b) specific and reliable variance in the indicator not accounted for by the substantive factor(s).
 
 In this way, the unmeasured causes of an indicators are seen as *latent* sources of variation that *cause* specific variance in the indicator. This is why disturbances are denoted as latent variables in RAM notation that point toward the indicator.
 
@@ -220,7 +222,7 @@ Note that disturbance (residual) correlations violate the view of conditional in
 
 ## Common factor model
 
-We'll devote multiple weeks to discussing factor models, but for now, please note that the most frequent measurement model in SEM is called the common factor model, in which a set of indicators reflect the influence of an underlying factor. This model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
+We'll devote multiple weeks to discussing factor models, but for now, let's examine the most frequent measurement model in SEM, which is called the common factor model. This model instantiates the view that a set of indicators reflect the influence of an underlying factor. The common factor model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
 
 ![](common_factor_model-01.svg)
 
