@@ -1,0 +1,233 @@
+---
+title: "Introduction to latent variables"
+subtitle: "PSY 597 Week 4"
+author: "Michael Hallquist"
+date: "14 Sep 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 24px; max-width: 1400px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, tidyverse, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR, matrixcalc)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3) 
+```
+
+#Conceptual definitions of latent variables
+
+*Adapted from Bollen (2002, 2012).* From a conceptual standpoint, latent variables are hypothetical constructs that a scientist believes explain the relationship among one or more observables. Typically, latent variables are derived from a theory that specifies processes that cause/explain the patterns in observed data. 
+
+For example, we might believe that emotion regulation is an important construct that underlies observables such as aggression, the tendency to cry, and rumination. In purely descriptive terms, if we measured these three variables (e.g., using self-report questionnaires or behavioral observations), we might notice a positive correlation among them. A latent variable perspective is that the pattern of correlations *reflects* the influence of a latent construct, *emotion regulation*. That is, *emotion regulation* is a *common cause* (or influence) on the observed data.
+
+Informal definitions of latent variables tend to emphasize the *conceptual* or *hypothetical* status of the latent variable. As Bollen (2012) notes, however, this may imply that the construct is pure fiction and may have no relationship to data. In SEM, we do not adopt this view. Rather, a positive account of latent variables is that they cannot be measured directly, but by examining relationships among observed variables, we can test models that corroborate or discorroborate their existence. Indeed, this is the core component *construct validation* in psychological science (Cronbach & Meehl, 1955; Clark & Watson, 1997).
+
+If we take seriously the notion that latent variables *cannot* be measured directly, an interesting thought experiment is to ask whether this is inherent in the construct, or reflects a limitation of our measurement tools. For example, the Standard Model in physics predicts that there is a 'quantum field' (a hypothetical construct) that gives rise to the specific mass of any particle. Without getting into the weeds, a limitation of this model is that it does not clearly explain *weak* interactions among some quantum particles (*W* and *Z*) thought to have huge mass. Decades ago, Higgs theorized the existence of a particle, the Higgs boson, that explains these interactions. This theory predated the ability to *measure* particles of this mass, precluding an empirical tests of the Higgs boson. In 2012, however, scientists at CERN were able to observe a new particle in exactly the region of mass predicted by Higgs, providing strong evidence of the Higgs boson.
+
+Even though this observation is consistent with the theory (and the prediction was very precise to begin with), there is still the possibility that a) the conclusions are unreliable due to measurement error or instrumentation bias, and/or b) there could be alternative accounts of particle interactions that explain the data equally well. The first concern (measurement error, bias) was largely ruled out by multiple instrumentation checks, many repetitions, and independent replications in two different colliders. And although b) could be true, we would need the specifics (i.e., a framework with predictions) to compare the evidence for an alternative theory. Thus, barring an alternative account or new counterveiling observations, a construct that was previously only hypothetical has been corroborated by empirical observations.
+
+##Question for discussion: could latent variables in psychology someday be observed directly? 
+
+What sorts of latent variables could become measured directly given the proper instrumentation? What variables are inherently unobservable?
+
+#Formal definitions of latent variables
+
+## Sample realization
+
+Bollen 2002, p. 612: A latent variable is a variable "for which there is no sample realization for at least some observations in a given sample"
+
+This general definition distinguishes between the *possible* values (in an abstract sense) versus the *realized* values in a specific dataset. Thus, if we have no realizations of the variable (i.e., direct measurements), yet we think that values exist according to our theory, that is a latent variable. The sample realization definition does not presuppose that the latent variable *cannot* be measured, just that we did not measure it. As Bollen (2012, p. 59) notes, "The definition assumes that all variables are latent until there are realizations for the individuals in a sample."
+
+The sample realization definition is closest to the intellectual spirit of SEM.
+
+## Local independence (aka conditional independence)
+
+The local independence definition of a latent variable is that two observed variables, *X* and *Y*, are independent of each other after conditioning on one or more latent variables. More plainly, if a latent variable serves as a *common cause* of two observed variables, the residual association should be zero after we account for the latent variable. 
+
+Consider the situation in which two observed variables are correlated:
+
+```{r}
+grViz("
+digraph wm {
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 12]
+
+  node [shape = box, fontname = Arial]
+  X; Y;
+
+  X:s -> Y:s [dir='both', label='0.5']
+  { rank = same; X; Y }
+
+}")
+```
+
+
+```{r}
+grViz("
+digraph wm {
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 12]
+
+  # nodes for observed and latent
+  node [shape = circle, fontname = Arial]
+  L;
+  
+  node [shape = box, fontname = Arial]
+  X; Y;
+
+  { rank = same; X; Y }
+
+  # edges
+  X:s -> Y:s [dir='both', label='0'];
+  L -> X [label='w1'];
+  L -> Y [label='w2'];
+
+}")
+```
+
+This extends to the case of multiple latent variables -- that is, two observed variables should have zero 
+correlation after we account for the multiple causes.
+
+Under the local independence definition, if there is residual indicator correlation after accounting for latent variables, it suggests that there are other latent variables yet to be identified. This is part of the intellectual lineage behind viewing the *disturbance* as a latent variable that includes unmeasured, but meaningful, causes.
+
+### Assumptions of local independence definition (from Bollen)
+
+1.  Requires at least two indicators per latent variable
+2.  There can be no covariation between the unique variation in indicators (after accounting for latent)
+3.  There can be no causal (regression) effects between indicators
+4.  Each latent variable must influence at least one indicator
+5.  The indicators do not influence the latent variables
+
+## True score (classical test theory)
+
+We'll delve into psychometric theory soon, but the essential idea of a 'true score' on a latent variable is that if we were to repeatedly (and independently) assess an individual, the mean (expectation) would approach the true value. But because we are working with a *latent* variable, we can't simply measure an individual. Thus, under classical test theory (CTT), the idea is that a given observation is a combination of the true score and measurement error (i.e., measurement error corrupts our estimate of the latent variable):
+
+$$
+y_i = T_i + e_i
+$$
+### Assumptions of true score definition
+
+1. No covariance between errors
+2. No causal (regression) effects between indicators
+3. The indicators do not influence the latent factors
+
+# Reflective versus formative latent variables
+
+There is a crucial distinction between indicators (observed) thought to *cause* or *form* the latent variable versus indicators that reflect the *effects* of a latent variable. For more details on this issue, see see Bollen and Bauldry, 2011, *Psychological Methods*.
+
+## Reflective construct (aka reflective model)
+
+The typical view is that indicators *reflect* the effects of the latent variable. In this view, latent variables are *causes* and indicators are *effects*. For example, one might think that working memory causes individual differences in the ability to reverse the order a set of numbers mentally (e.g., converting 1-7-9-3-5 to 5-3-9-7-1). This is the basis for the notation of the common factor model, in which the arrows point from the latent construct to the indicators:
+
+```{r}
+grViz("
+digraph wm {
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 12]
+
+  # nodes for observed and latent
+  node [shape = circle, fontname = Arial]
+  'Working\nMemory';
+  
+  node [shape = box, fontname = Arial]
+  'digit-span'; 'n-back'; 'sequence\nrepetition'
+
+  # edges
+  'Working\nMemory' -> 'digit-span';
+  'Working\nMemory' -> 'n-back';
+  'Working\nMemory' -> 'sequence\nrepetition';
+}")
+```
+
+Thus, in a reflective model, the indicators *reflect* the underlying influence of a latent variable.
+
+##Formative construct (aka formative model)
+
+An alternative, albeit less common, representation is that the indicators *cause* the latent variable. The paradigmatic example is socioeconomic status (SES), which can be viewed as a composite of education, neighborhood quality, income, and occupational attainment. Importantly, however, the *causes* of SES are *not* these variables, but perhaps other factors such as institutional racism, disadvantage during development, and so on.
+
+Thus, if one is interested in estimating a composite of indicators that *form* a latent construct, one can estimate a model in which (usually exogenous) observed variables cause the score on a latent variable such as SES:
+
+```{r}
+grViz("
+digraph wm {
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 12]
+
+  # nodes for observed and latent
+  node [shape = circle, fontname = Arial]
+  'SES';
+  
+  node [shape = box, fontname = Arial]
+  'income'; 'education'; 'occupation'; neighborhood
+
+  # edges
+  income -> SES;
+  education -> SES;
+  occupation -> SES;
+  neighborhood -> SES [xlabel='1'];
+  neighborhood:n -> education:n [dir='both'];
+  neighborhood:n -> occupation:n [dir='both'];
+  occupation:n -> education:n [dir='both'];
+  occupation:n -> income:n [dir='both'];
+  education:n -> income:n [dir='both'];
+  neighborhood:n -> income:n [dir='both'];
+  { rank = same; income; neighborhood; education; occupation }
+}")
+```
+
+In this scenario, the exogenous, potentially correlated, observed variables are combined to *form* a latent variable, SES. Note the *fixed* coefficient of 1.0 for one of the items forming the composite. This is typically required to scale the metric of the SES construct relative to the observed variables.
+
+### Question for discussion: What other formative constructs can you think of?
+
+## Reflective versus formative: an issue of the indicators?
+
+Bollen cautions against defining a latent variable on the basis of a given set of indicators in a specific model. That is, if the latent variable reflects a true, if unobserved, entity, then wedding our conception of it to the variables we measured and modeled is short-sighted. Furthermore, a model may include observed variables that are *effects* of the latent variable as well as variables that are *causes* of the latent variable. Thus, there is not a bright line between *reflective* and *formative* models, respectively. 
+# What is a measurement model?
+
+In essence, measurement models in SEM seek to map observed data onto hypothetical constructs (Kenny). More formally, measurement models specify the relationship between latent variables and observed variables.
+
+## Latent variables in SEM
+
+In most of conventional SEM, latent variables are thought to be normally distributed, having a mean and variance. This is typically called a *continuous* latent variable such that factor scores (i.e., individual values $\eta$ on the latent variable) vary according to Gaussian distribution. Although we will not delve into this much in introductory SEM, there are also *categorical* latent variables that follow a multinomial distribution such that individuals have a probability of membership in each of $k$ latent subgroups (aka latent classes).
+
+## Ingredients of measurement models
+1. Substantive latent variables that explain covariation among observed variables.
+2. Meaningful, but unmodeled, residual variation in the indicators of substantive latent variables. These are the disturbances.
+3. Potential covariation among disturbances capturing meaningful residual association due to unknown latent causes.
+
+Disturbances are thought to reflect a combination of a) random error (related to reliability); and b) specific and reliable variance in the indicator not accounted for by the substantive factor.
+
+In this way, the unmeasured causes of an indicators are seen as *latent* sources of variation that *cause* specific variance in the indicator. This is why disturbances are denoted as latent variables in RAM notation that point toward the indicator.
+
+Note that disturbance (residual) correlations violate the view of conditional independence, but are not usually statistically or conceptually problematic. For example, measures of the same variable (e.g., job satisfaction ratings) may be indicators of a latent variable (e.g., occupational achievement) at two different occasions (e.g., 2015 and 2017). In a longitudinal measurement model, we may be interested in the substantive similarity and growth in occupational achievement (the latent variable), but there may be specific variation (aka uniqueness) in the job satisfaction rating that should be captured by a disturbance correlation.
+
+## Common factor model
+
+We'll devote multiple weeks to discussing factor models, but for now, please note that the most frequent measurement model in SEM is called the common factor model, in which a set of indicators reflect the influence of an underlying factor. This model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
+
+![](common_factor_model-01.svg)
+
+## Multiple causes: bifactor model
+
+A specific case of the situation of meaningful residual covariation is the bifactor model. We'll cover this in detail in a few weeks, but the important conceptual point is that the specific variation between two variables after accounting for one latent cause may reflect a *second* latent cause. For example, self-report items such as "I tend to worry a lot" may reflect the latent construct of neuroticism. But if we separate negatively keyed items (e.g., "I don't worry much") from positively keyed items ("I often feel anxious"), this may be a second latent cause of the remaining association among variables. 
+
+That is, the observed covariance between two variables reflects *multiple* latent causes:
+
+![](bifactor_model-01.svg)
