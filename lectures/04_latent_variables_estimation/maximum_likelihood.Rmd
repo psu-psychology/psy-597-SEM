@@ -1,0 +1,363 @@
+---
+title: "Maximum Likelihood Estimation"
+subtitle: "PSY 597 Week 4"
+author: "Michael Hallquist"
+date: "14 Sep 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 24px; max-width: 1400px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR, matrixcalc)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3) 
+```
+
+# Overview
+
+Maximum likelihood estimation depends on choosing an underlying statistical distribution from which the sample data should be drawn. That is, our expectation of what the data *should* look like depends in part on a *statistical distribution* that parameters that govern its shape. The most common parameters for distributions govern location (aka 'expectation', often the mean) and the [scale](https://en.wikipedia.org/wiki/Scale_parameter) (aka '
+'dispersion', often variance). There are many different statistical distributions such as Gaussian (aka normal), [Poisson](https://en.wikipedia.org/wiki/Poisson_distribution), [Gamma](https://en.wikipedia.org/wiki/Gamma_distribution), and [Beta](https://en.wikipedia.org/wiki/Beta_distribution). Crucially, probability distributions have parameter that define their shape and numerical properties.
+
+In most of SEM, and regression for that matter, scientists often select the Gaussian distribution based on a belief that observed values tend to have a central tendency and symmetric dispersion around the tendency. Indeed, the [central limit theorem](https://en.wikipedia.org/wiki/Central_limit_theorem) posits that if a set of independent random variables is summed, the distribution approaches a normal distribution even if each variable is not Gaussian. Thus, if we imagine that the observed scores on a variable $X$ reflect the summed contribution of many unknown latent processes, a Gaussian assumption on the resulting distribution is often quite principled and parsimonious.
+
+Let's focus on the univariate Gaussian distribution as a test case for thinking about parameter fitting and likelihood methods. A Gaussian distribution has a mean and standard deviation that define the location and scale, respectively, of the data it describes. This is typically denoted:
+
+$$ X \sim \mathcal{N}(\mu, \sigma^2) $$
+where *X* is a random variable distributed as normal with mean $\mu$ and variance $\sigma^2$. For example, here is the density of normally distributed numbers with $\mu = 10$ and $\sigma^2 = 50$.
+
+```{r}
+x <- seq(-15, 35, length=50)
+hx <- dnorm(x, mean=10, sd=sqrt(50))
+df <- data.frame(x=x, hx=hx)
+ggplot(df, aes(x=x, y=hx)) + geom_bar(stat="identity") + xlab("X value") + ylab("Density")
+```
+
+Importantly, when we are trying to identify the underlying parameters of a distribution such as the normal, we might try a fitting procedure (similar to OLS in regression). That is, we could try to minimize the discrepancy between the observed scores $X$ and the predicted data from a Gaussian distribution with mean $\mu$ and variance $\sigma^2$. By trying different values for the mean and variance, we could identify the values that best characterize the data. This is conceptually identical to trying to identify a best-fitting univariate regression line where we might test many values of the slope $\beta$.
+
+# Fitting a univariate normal distribution using maximum likelihood
+
+Distribution fitting can be accomplished using a form of maximum likelihood estimation. Glossing over the details for now, imagine that we simulated 5000 observations from a normal distribution with $\mu = 50$ and $\sigma^2 = 50$. If we handed this dataset to a friend without any further information, could they figure out: a) the statistical distribution of the data, and b) the best-fitting parameters of that distribution?
+
+Here are the data:
+
+```{r}
+X <- rnorm(5000, mean=50, sd=sqrt(50))
+lattice::histogram(X)
+```
+
+## Sample likelihood function
+
+Answering the questions about the distribution and parameters of the distribution questions both turn out to be related to maximum likelihood estimation. That is, the question of maximum likelihood is to identify a set of parameters, $\boldsymbol{\hat{\theta}}$, that maximizes the probability of the *data* given the *parameters*. This is called the sample likelihood function:
+
+$$
+\mathcal{L}(D | \boldsymbol{\hat{\theta}}, model)
+$$
+
+That is, what is the likelihood of the data, $D$, given a set of estimated parameters $\boldsymbol{\hat{\theta}}$ and a statistical model? The sample likelihood reflects the *probability* of the observed data given the parameters and model:
+
+$$
+\mathcal{L}(D|\boldsymbol{\hat{\theta}}, model) = P(D|\boldsymbol{\hat{\theta}}, model) = \\
+P(\mathbf{d}_1, \mathbf{d}_2, ..., \mathbf{d}_n) = 
+\prod_{n=1}^{N}P(\mathbf{d}_n|\boldsymbol{\hat{\theta}})
+$$
+
+where $\mathbf{d}_n$ denotes the vector of data for the *n*th individual and $\prod$ is the product operator (i.e., we multiply the probabilities for each subject together). Conceptually, this gives us the *joint* probability of all observations in the dataset, which is what we hope to maximize. Recall from basic probability theory that the joint probability of two independent events occurring simultaneously is equal to their product. So, if we ask "what is the probability that two coins flipped at once will both be heads?,"  the answer is $0.5 \cdot 0.5 = 0.25$. Likewise, here, we are taking the product of the *individual* likelihoods under a candidate set of parameters $\boldsymbol{\hat{\theta}}$ to determine the joint probability of the observed data in the sample.
+
+Because the product of many probabilities becomes very, very small, we typically maximize the log-likelihood to keep the computer on the rails (since maintaining numerical precision on infinitesimally small numbers is hard to do).
+
+Returning to our simulated data, we could try to compute the parameters of different candidate distributions and *compare* their log-likelihoods in order to compare the relative fits. 
+
+## Mis-fitting the data with the wrong distribution
+
+Let's start with the gamma distribution, which we know (because of our omniscient status on this problem) is wrong. The parameters of a gamma distribution are the *shape*, $\alpha$, and *rate*, $\beta$.
+```{r}
+gfit <- suppressWarnings(fitdistr(X, "gamma"))
+gfit$estimate
+```
+These are the best-fitting parameters of a gamma distribution that maximize the likelihood of the observed data. And you can see that they provide a reasonable fit to the data by simulating new data at those parameters:
+
+```{r}
+newdat <- rgamma(5000, shape=gfit$estimate["shape"], rate=gfit$estimate["rate"])
+lattice::histogram(newdat)
+```
+
+Critically, the log-likelihood of the data given the parameters of this gamma distribution is returned by the fitting procedure:
+
+```{r}
+gfit$loglik
+```
+
+*N.B.* Higher likelihood estimates are always better!! Thus, even though this is negative, the larger it is, the more likely the data are given the parameters and model. The log-likelihood estimate provides an essential measure of *relative fit* between the data and the model (with its parameters).
+
+## Fitting the data using the correct underlying distribution (i.e., normal)
+
+Let's compare this to fitting the data using a normal distribution. Recall that we simulated normal data, so we're simply testing whether we can recover the underlying mean and variance of the distribution based on the data alone.
+
+Using the maximum likelihood fitting procedure of `fitdistr`, the best-fitting parameters are essentially identical to the groundtruth, $\mu = 10$, $\sigma^2 = 50$, $\sigma = 7.07$ (i.e., sd is the sqrt of variance).
+```{r}
+nfit <- fitdistr(X, "normal")
+nfit$estimate
+```
+
+There will be sampling variability in the values of $X$ drawn from a Gaussian distribution that leads to different *sample statistics*. Note that the maximum likelihood procedure exactly matches the sample statistics:
+
+```{r}
+c(mean=mean(X), sd=sd(X))
+```
+
+
+Let's compare the fit of the normal distribution to the data relative to the gamma distribution. Both log-likelihoods are estimated at the best-fitting parameters (i.e., the best fit the algorithm could achieve)
+
+```{r}
+c(normal=nfit$loglik, gamma=gfit$loglik)
+```
+
+Notice that the log-likelihood (often abbreviated LL) is higher than the gamma distribution (by about 30-40 points). This indicates that the normal distribution at optimized parameters fits the data better than the gamma distribution. This makes sense given that we simulated data from the normal! But it is also an important theoretical point that one *model* may represent the data better than another, even after fitting the parameters of each model. Simply put, the normal distribution is a better *representation* of $X$ than the gamma distribution. 
+
+## Sample likelihood of a univariate normal distribution
+
+But how did the procedure identify the log-likelihood of the data given the parameters and model (where the model here is just the statistical distribution being considered)? This is based on the sample likelihood function, which defines how probable *each* observation is under the candidate parameters $\boldsymbol{\hat{\theta}}$ and model (e.g., normal distribution). In the case of the normal, which will be our primary focus in SEM (since we generally assume multivariate normality), the likelihood function is relatively straightforward.
+
+More specifically, it is based on the *probability density function* (pdf) for the distribution, which expresses how likely it is that an observation $x$ was drawn from a normal distribution having mean $\mu$ and variance $\sigma^2$:
+
+$$
+f(x|\mu, \sigma^2)= \frac{1}{\sqrt{2 \pi \sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+$$
+
+### Mahalanobis distance measure
+
+As Enders points out, the value of the pdf is largely governed by the term in the exponent (excluding the constant of 2):
+
+$$
+\frac{(x - \mu)^2}{\sigma^2}
+$$
+This is called *Mahalanobis distance*, which a distance measure that quantifies how far $x$ is from the mean $\mu$ in standardized units of variance $\sigma^2$. Thus, it is in the units of a squared *z*-score. This measure of distance scales up well to multiple variables, facilitating multivariate normal estimation (most of SEM).
+
+Knowing this formula, we can test candidate values for $\mu$ and $\sigma^2$ to determine the probability that an observation was drawn from the candidate normal distribution. Let's start with a candidate distribution with $\mu = 2$ and $\sigma^2 = 5$. Note that this is likely to be a bad fit given our *population* (aka 'groundtruth') parameters used in the simulation above. The population has $\mu = 50$ and $\sigma^2 = 50$
+
+Here are the probabilities (computed using the pdf equation above) for the first five observations:
+
+```{r}
+pdf_norm <- function(x, mu, sigma2, log=FALSE) {
+  v <- (1/sqrt(2*pi*sigma2)) * exp(-(x-mu)^2/(2*sigma2))
+  if (log) { v <- log(v) }
+  return(v)
+}
+
+iprobs <- pdf_norm(X, mu=2, sigma2=5)
+#iprobs <- pdf_norm(X, mu=50, sigma2=sqrt(50))
+iprobs[1:5]
+```
+
+Thus, each of these probabilities represents the *likelihood* that a given value from $X$ was drawn from the candidate normal distribution with $\mu = 2$ and $\sigma^2 = 5$. Notice how tiny these individual likelihoods are, suggesting we are very far from approximating the data. In addition, the tiny values undermine our numerical precision in computing the overall likelihood, which is a product of the individual likelihood. This is one motivation for working with log likelihoods, which are numerically more stable. Here are the *log* probabilities for the first five scores `r round(X[1:5], 1)`:
+
+```{r}
+iprobs_log <- log(iprobs)
+iprobs_log[1:5]
+```
+
+Note that each of these values gives us information about likely a single data point, $x$, is to have come from the candidate normal distribution ( $\mu = 2, \sigma^2 = 5$). Thus, higher values are more probable than lower values.
+
+The formal sample likelhood function is the product of all individual likelihoods:
+
+$$
+\mathcal{L}(X|\mu, \sigma^2, model)= \prod_{j=1}^{n}\frac{1}{\sqrt{2 \pi \sigma^2}} e^{-\frac{(x_j-\mu)^2}{2\sigma^2}}
+$$
+
+which [simplifies to](https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood):
+
+$$
+(2 \pi \sigma^2)^{-n/2} e^{-\frac{\sum_{j=1}^n(x_j - \mu)^2}{2 \pi \sigma^2}}
+$$
+
+
+```{r, eval=FALSE}
+#not used at the moment, but here if you want to test it out
+ll_norm <- function(x, mu, sigma2) {
+  #https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood
+  n <- length(x)
+  
+  #likelihood function, but yields infinitesimally small values
+  #(2*pi*sigma2)^(-n/2) * exp(-(sum(x - mu)^2)/(2*sigma2))
+  
+  #log-likelihood, which works (i.e., equals the sum of individual log probs)
+  #(-n/2)*log(2*pi) - (n/2)*log(sigma2) - (1/(2*sigma2))*sum((x-mu)^2) 
+  
+  #different expression  
+  #https://onlinecourses.science.psu.edu/stat414/node/191
+  #sqrt(sigma2)^-n * (2*pi)^(-n/2) * exp(-(1/(2*sigma2)) * sum((x - mu)^2))
+  
+}
+
+#ll_norm(X, mu=50, sigma2=50)
+```
+
+If we want to look at the *joint* log probability of all observations (i.e., the sample likelihood), we can simply sum the individual log probabilites (remember, sum of logs is equal to their product):
+
+```{r}
+sum(iprobs_log)
+```
+
+More details here: https://onlinecourses.science.psu.edu/stat414/node/191
+
+## Maximum likelihood parameter fitting of a normal distribution
+
+Thus, the conceptual goal is to test a variety of values of $\mu$ and $\sigma^2$ that could characterize the distribution. Although the algorithm doesn't literally do a 'brute force' search, imagine that we test parameters in the space $10 \leq \mu \leq 90$ and $10 \leq \sigma^2 \leq 90$. We could compute the sample log-likelihood at each of these candidate values and the look for the highest value. This would identify parameters that best fit the data, assuming a normal distribution (i.e., the 'model').
+
+Note that we are fitting two *free parameters*. Thus, the sample likelihood is a function of both $\mu$ and $\sigma^2$. From a visualization perspective, this means we have a 2-D likelihood surface (i.e., all possible combinations of $\mu$ and $\sigma^2$ in the range of our search).
+
+```{r}
+mu_space <- seq(10, 90, length.out = 150)
+sigma2_space <- seq(10, 90, length.out = 150)
+parset <- expand.grid(mu=mu_space, sigma2=sigma2_space)
+parset$ll <- NA #initialize empty log-likelihood for all models
+for (i in 1:nrow(parset)) {
+  parset$ll[i] <- sum(pdf_norm(X, mu=parset[i,"mu"], sigma2=parset[i,"sigma2"], log=TRUE))
+}
+
+#plot just data near the good values to make the surface clear
+ggplot(filter(parset, between(mu, 45, 55) & between(sigma2, 40,70) ), aes(x=mu, y=sigma2, fill=ll)) + geom_tile() +
+  scale_fill_viridis("Log-likelihood",option = "plasma")
+```
+
+Notice the hot spot toward the middle where the log-likelihood is the highest, indicating parameters that better fit to the data. What were the best parameters we identified?
+
+```{r}
+#best fit
+print(parset[which.max(parset$ll),], row.names=FALSE)
+```
+
+Notice how close this is to the algorithmic solution from the `fitdistr` solution in the MASS package. Thus, from a conceptual standpoint, the goal of trying to fit a univariate normal distribution to a vector of values $\mathbf{x}$ is to estimate the parameters of the distribution, $\mu$ and $\theta$. But if the data were generated by a different model (e.g., a gamma distribution), it will be almost impossible for our Gaussian fitting process to capture the data as well because it's the wrong *model*. This reminds us that the sample likelihood is always conditioned on both the parameters (which are fit to the data) and the underlying model, which the scientist chooses and represents a belief about the structure or processes underlying the data.
+
+# Multivariate normal distribution
+
+Conventional maximum likelihood methods assume that the *endogenous* variables of a model are distributed according to a multivariate normal distribution. 'MVN' data have three properties:
+
+1. All individual distributions are normal (i.e., univariate).
+2. All bivariate distributions are normal.
+3. The bivariate associations are linear and the distribution of bivariate residuals is homoscedastic.
+
+Most of the time in SEM, we are estimating parameters under the assumption (that should be checked) of multivariate normality. We can extend maximum likelihood in the univariate Gaussian case to multiple variables distributed as Gaussian. The MVN distribution has two components, a vector of means $\boldsymbol{\mu}$ and a covariance matrix $\boldsymbol{\Sigma}$.
+
+The *individual* likelihood function of *MVN* data for a vector of endogenous variables, $\mathbf{x}_i$, is:
+
+$$
+\mathcal{L}(\mathbf{x}_i|\boldsymbol{\mu}, \boldsymbol{\Sigma}, model) = 
+\frac{1}{(2 \pi)^{p/2} | \boldsymbol{\Sigma} |^{1/2}} e^{-(\mathbf{x}_i-\boldsymbol{\mu})'\boldsymbol{\Sigma}^{-1}(\mathbf{x}_i-\boldsymbol{\mu})/2}
+$$
+
+Note that $ | \boldsymbol{\Sigma} |^{1/2}} | $ denotes the square root of the *determinant* of the covariance matrix (details in previous matrix algebra lecture). Also, $p$ is the number of endogenous variables. We can re-express this as a log-likelihood of a vector of observations for a given *individual* $i$:
+
+$$
+\textrm{log}(\mathcal{L}(\mathbf{x}_i|\boldsymbol{\mu}, \boldsymbol{\Sigma}, model)) = 
+  -\frac{p}{2}\textrm{log}(2 \pi) - \frac{1}{2}\textrm{log} | \boldsymbol{\Sigma} |
+  -\frac{1}{2}(\mathbf{x}_i - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{x}_i - \boldsymbol{\mu})
+$$
+
+## Multivariate Mahalanobis distance
+
+This looks a bit ugly, but conceptually, note that the core engine behind the likelihood is the Mahalanobis distance:
+
+$$
+(\mathbf{x}_i - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{x}_i - \boldsymbol{\mu})
+$$
+
+As Enders (2010) describes, the multivariate Mahalanobis distance quantifies how far individual *i*'s data (i.e., a *vector* of values for all endogenous variables) falls from the center of the multivariate normal distribution. This distance metric is not limited to a certain number of variables and expresses how *jointly* deviant a vector of scores $\mathbf{x}_i$ is from the multivariate normal distribution.
+
+## The bivariate normal case
+
+In bivariate normal data (a simple case of MVN), we consider the joint Gaussian distribution of two variables, $x_1$ and $x_2$. The MVN distribution is described by:
+$$
+\boldsymbol{\mu} = \begin{bmatrix}
+\mu_1 \\ \mu_2
+\end{bmatrix}, \enspace
+\boldsymbol{\Sigma} = \begin{bmatrix}
+\Sigma_{11} & \Sigma_{12} \\
+\Sigma_{21} & \Sigma_{22} \\
+\end{bmatrix}
+$$
+
+In the bivariate case ($p=2$) we can expand the individual likelihood for clarity in how the matrices are implicated:
+
+$$
+\mathcal{L}(\mathbf{x}_i|\boldsymbol{\mu}, \boldsymbol{\Sigma}, model) = 
+\frac{1}{2 \pi | \boldsymbol{\Sigma} |^{1/2}} 
+\textrm{exp}\left[-\frac{1}{2} \begin{pmatrix} x_1 - \mu_1 \\ x_2 - \mu_2 \end{pmatrix}'
+\begin{bmatrix}
+\Sigma_{11} & \Sigma_{12} \\
+\Sigma_{21} & \Sigma_{22} \\
+\end{bmatrix}^{-1}
+\begin{pmatrix} x_1 - \mu_1 \\ x_2 - \mu_2 \end{pmatrix}
+\right]
+$$
+## Visualization of bivariate normality
+
+And we can visualize the properties of bivariate normal data, by simulating data according to the following parameters:
+
+$$
+\boldsymbol{\mu} = \begin{bmatrix}
+0 \\ 0
+\end{bmatrix}, \enspace
+\boldsymbol{\Sigma} = \begin{bmatrix}
+1 & 0.5 \\
+0.5 & 1 \\
+\end{bmatrix}
+$$
+In plain English, these parameters define two variables with means of zero, variance of 1, and covariance of 0.5. By virtue of having variance = 1, the covariance matrix $\boldsymbol{\Sigma}$ is also the correlation matrix (i.e., the variables correlate at $r = 0.5$).
+```{r}
+mu <- c(0,0)                         # Mean
+Sigma <- matrix(c(1, .5, .5, 1), 2)  # Covariance matrix
+
+# Generate 5000 observations with this structure
+X <- data.frame(mvrnorm(5000, mu = mu, Sigma = Sigma, empirical=TRUE))  # from Mass package
+
+ggplot(X, aes(x=X1, y=X2)) + stat_density_2d(geom = "raster", aes(fill = ..density..), contour = FALSE) +
+  scale_fill_viridis(option="plasma") + coord_equal()
+
+```
+
+The brightness of the tiles denotes the *density* (i.e., the relative number of observations) in that part of the bivariate space. Note that the data are elliptical, not circular, with a positive slope. This is evidence that there is a positive covariance between the two variables. This is governed by $\Sigma_{12}$, the covariance of $x_1$ and $x_2$. If we set this parameter to zero, we would see a circular bivariate distribution:
+
+```{r}
+Sigma[1,2] <- Sigma[2,1] <- 0 #nullify covariance
+# Generate 5000 observations with this structure
+X <- data.frame(mvrnorm(5000, mu = mu, Sigma = Sigma, empirical=TRUE))  # from Mass package
+
+ggplot(X, aes(x=X1, y=X2)) + stat_density_2d(geom = "raster", aes(fill = ..density..), contour = FALSE) +
+  scale_fill_viridis(option="plasma") + coord_equal()
+
+```
+
+# A bit about iterative estimation algorithms
+
+We can easily solve for the sample likelihood in the univariate Gaussian case, but as we delve into MVN data (most of SEM), there are not simple analytic solutions for the best-fitting parameters. Recall that in multiple regression, we could solve for the $\boldsymbol{\beta}$ coefficients using one matrix equation. In maximum likelihood fitting of MVN data, however, we typically rely on iterative algorithms that start a set of parameter values, $\boldsymbol{\hat{\theta}}$, then test new candidate set and compare whether the log-likelihood is better or worse. 
+
+As in our 'likelihood surface' above, the idea is to find the parameters that maximize the sample likelihood (i.e., the likelihood of the data given the parameters and the model). We used a brute force approach above (simulating parameters in a grid), but this is entirely intractable in general. Instead, we must rely on first and second partial derivatives of the mean and covariance parameters. For details on this, see Enders (2010). The important conceptual point is that the derivatives provide guidance to the algorithm about which direction to go for each parameter. For example, if the candidate mean for $x_1$ is $5.2$, we need guidance about whether to try $5.1$, $5.3$ (small jumps), or even $500.5$ (big jump). A brute force search would take a very long time and might not identify the maximum likelihood estimates.
+
+In an iterative algorithm, such expectation-maximization (EM), we estimate the sample likelihood at the current set of parameter values $\boldsymbol{\hat{\theta}}$ and compare it to the sample likelihood at a new set of values $\boldsymbol{\hat{\theta}}_{\textrm{new}}$. If the likelihood increases, we keep the candidate set and continue. At some point, however, the likelihood function may increase only very trivially (e.g., $10^{-5}$), suggesting that changing the parameters is not improving the fit to the data. This is called satisfying the *convergence criterion*, and in maximum likelihood, typically means that we have identified the maximum likelihood estimates of the parameters.
+
+# Estimating SEMs
+
+Most of this complexity is hidden from us, mercifully, but the process of estimating SEMs involves applying one of a family of *iterative algorithms*, which proceed as follows:
+
+![](estimating_sems-01.svg)
+
+
