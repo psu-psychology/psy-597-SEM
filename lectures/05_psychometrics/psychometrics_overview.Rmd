@@ -1,0 +1,343 @@
+---
+title: "Overview of Psychometrics"
+subtitle: "PSY 597 Week 5"
+author: "Michael Hallquist"
+date: "21 Sep 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 24px; max-width: 1400px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR, matrixcalc)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3) 
+```
+
+# Overview
+
+Psychometrics is the study of psychological measurement, encompassing both test theory and methods to develop tests. It has roots in studies of individual differences, such as Galton's studies of height or intelligence, as well as psychophysics, such as Wundt's studies of perception. For this class, we will focus on classical test theory (CTT) and latent trait models (LTM) primarily. 
+
+## Classical test theory
+
+Classical test theory assumes that the score on a given test (often the sum of items) reflects a combination of true score (free from error) and measurement error:
+
+$$
+y_i = t_i + e_i
+$$
+
+where $y_i$ is the observed score for individual $i$, $t_i$ is the 'true' score, and $e_i$ is the measurement error. Because we cannot measure $t_i$ directly, we must rely on psychometrics to derive an estimate of the latent variable. The error component of observed scores is thought to have a mean of 0 and to be uncorrelated with the true score. Moreover, the intuition is that if we measured an individual many times, the measurement error would average out such that we would be left with a good approximation of the true score.
+
+The estimated standing on a latent variable goes by different names, depending on the literature.
+
+1.  Classical test theory: True score
+2.  Factor analysis: factor score
+3.  Item response theory: 'theta' $\theta$ (a latent trait)
+
+Under classical test theory, the emphasis is on item composites, especially sums. For example, the total score on a math exam is the *unit of analysis* for inferring standing on math ability. That is, our measure of the latent variable is the total score.
+
+By contrast, in formal measurement models, we are concerned with building a factor model where the indicators are all good representations of the latent variable. We wish to quantify *how well* each item reflects the latent variable. Thus, measurement models also focus on item characteristics.
+
+### Emphasis on reliability in CTT
+
+The goal of CTT is to approximate true scores by taking measurements that have little error. Thus, conceptually, the goal is to maximize reliability, which is a signal-to-noise-type ratio in which we consider true score variation relative to total variation:
+
+$$
+\textrm{reliability} = \frac{\textrm{true variation}}{\textrm{true variation + error variation}}
+$$
+
+Thus, CTT is concerned with minimizing error, which is broadly construed as all known and unknown causes of nuisance variation in the observed scores. Again, we are talking about *test scores*, not item-level characteristics.
+
+Thus, a scientist operating from a CTT perspective might be motivated to minimize variation in testing conditions (e.g., noisy versus loud room) because this could contribute to error. Likewise, having longer tests may help to cancel out measurement error due to peculiarities of specific items (aggregation). Note that CTT tends to assume that the items are exchangeable -- that is, their characteristics (e.g., difficulty or item-level error) are assumed equivalent.
+
+### Identifying properties of items in CTT
+
+Although CTT does not offer a formal model of how items reflect latent variables, it nevertheless acknowledges the importance of examining items. In particular, items have *difficulty* and *discrimination*. Difficulty can be quantified by the mean (or proportion correct) of the item such that harder items have a lower mean/proportion. Importantly, however, the mean will be strongly dependent on the sample, which is not ideal when our goal is to develop the *test*. Discrimination can be quantified by the the item-total correlation such that an item that better discriminates overall ability on the *test* will have a higher item-total correlation.
+
+These constructs were developed much more formally in latent trait models, but in CTT, the idea is that items that have low item-total correlation may be weeded out on the basis that they don't contribute clearly to the test. Likewise, if items are too easy or too difficult (mean scores), a test developer may consider them to be bad indicators of the construct, especially because CTT treats items as *exchangeable*, meaning that item characteristics should be similar.
+
+### Alternative: generalizability theory
+
+Generalizability theory builds on CTT by trying to parse systematic sources of nuisance variation in test scores. For example, there could be systematic variation due to person characteristics, rater characteristics, time of day, etc.
+
+## Latent trait models
+
+The primary alternative to a CTT approach is the latent trait model (LTM), which is an instantiation of SEM. Latent trait models provide a formal account of how person characteristics (especially relative standing on a latent trait) and item characteristics (especially strength of association between each indicator and its latent variable) contribute to observed data.
+
+Thus, in LTMs, both item characteristics and person characteristics matter in the validation of a psychometric test. The goal is to identify items that jointly contribute to a test that accurately measures a person's standing on a latent variable such as intelligence.
+
+### Common factor model
+
+As a quick reminder, the common factor model is the most latent trait model, and the one we will use primarily in SEM. This model instantiates the view that a set of indicators reflect the influence of an underlying factor. The common factor model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
+
+![](common_factor_model-01.svg)
+
+### Extension: item response theory (IRT)
+
+IRT further developed the ideas of generalizability theory and LTM by proposing formal measurement models for a variety of item response formats such as binary and polytomous. Thus, IRT models are a family of LTMs that emphasize accuracy in the representation of the items. For example, intuitively speaking, binary items should not be treated as continuous. But how can a set of responses to binary items be thought to reflect a normally distributed latent trait? This is a question addressed by a binary logistic IRT model. Moreover, one can apply selective restrictions such as equal item difficulties to examine the properties of the items.
+
+# The process of scale construction
+
+(Adapted from Furr Ch. 2)
+
+Classical test theory is concerned with developing objective tests of latent constructs by measuring observed indicators. By 'tapping into' the latent construct using psychometric indicators, the goal is to quantify individuals on the underlying latent trait. Developing tests is a major endeavor that requires item development, large-scale data collection, and latent structure analyses to refine the item pool and demonstrate the validity of the test.
+
+Furr breaks down test construction into four steps.
+
+1.  Articulate the construct and context
+2.  Choose response format and assemble initial item pool
+3.  Collect data
+4.  Psychometric analysis
+
+Importantly, the process can be cyclical such that psychometric analyses may reveal deficiencies in the test that prompt another round of item development and data collection. Furthermore, information gleaned from examining the convergent validity with other similar tests may lead one to refine, or further articulate, a view of the latent construct. For example, one might believe that some people are more emotionally perceptive than others, with individual differences falling along a single continuum:
+
+```{r}
+#curve(dnorm(x, mean=10, sd=3), col=3)
+x <- seq(-4, 4, length = 1000)
+ 
+# Returns the height of the probably distribution at each of those points
+y <- dnorm(x, 0, 2)
+
+plot(x,y,type="l", xlab ="Emotional perceptiveness", ylab="Frequency in population", cex=2)
+```
+
+One might articulate a view that emotional perceptiveness could be measured by the accuracy of imputing the mental states of others, correctly identifying emotional faces in an experiment, and others' ratings of one's empathy. To demonstrate *content validity*, one must identify indicators for all relevant aspects of the hypothetical construct. This also means articulating whether the construct is unitary, or whether it is composed of facets.
+
+In the case of emotional perceptiveness, we might define a host of manifest indicators such as those mentioned above, form an initial item pool, then develop an initial test composed of the best items from the pool. In the initial development of a test, one may first use rational criteria such as expert consensus to define what constitutes the 'best' indicators.
+
+After collecting test data from a large sample of 1000 undergraduates, one might conduct psychometric tests, especially factor analyses, to test how well the test conforms to one's a priori conception of the construct. For example, of our initial 50 items intended to measure emotional perceptiveness, we may learn that everyone rated himself/herself as 'excellent' in identifying the emotions of others. This lack of variability undermines the ability of the item to detect *individual differences* in the underlying trait. 
+
+Furthermore, we may learn that one item (e.g., performance on an emotion identification task) correlated poorly with the remaining items (e.g., mean *r* of 0.1). This result may lead us to drop the task, or if it seems conceptually central, it may lead us to consider what other indicators would provide convergent information.
+
+## Test development is iterative
+
+Altogether, the central idea is that test development involves an iterative process that includes both inductive (e.g., item pool development) and deductive (e.g., examination of factor loadings) reasoning. This can be summarized as (from Lesa Hoffman):
+
+```{r}
+grViz("
+digraph psychometrics {
+  rankdir='LR';
+  # a 'graph' statement
+  graph [overlap = false, fontsize = 12]
+
+  node [shape = oval, fontname = Arial, fixedsize=true; width=1.5; height=0.8;]
+  Construct; Items; Measurement [label='Measurement\nModel']; Response [label='Response\nSpace']; 
+
+{rank=same; Items -> Response;}
+Construct -> Items [label='Causality'];
+Response -> Measurement [label='Inference'];
+{rank=same; Measurement -> Construct [constraint=false];}
+
+}")
+```
+
+## Context
+
+An important part of scale development is to identify the target population to whom the test should be administered. In turn, this defines the population to whom results of the test can be generalized. For example, if we believe that a test measuring engineering ability is only valid in those who have taken calculus, we should not administer it to kindergartners and conclude that they have no ability. The target population also informs the strategy for validating a test in that one should *randomly sample* individuals from the target population. If a test should inform an understanding of more than one population (e.g., high school students and college students), it must be validated in both contexts.
+
+Finally, the context also refers to the literal context in which testing will occur. Thus, if a test requires intense concentration and should be conducted in a quiet room, then validating the test in a noisy environment will undermine its validity.
+
+### Using tests across groups (Test bias)
+
+A specific consideration about context is how well a test generalizes to a new population that may have different psychological characteristics. What constitutes a sufficient difference is a scientific consideration, but common examples include groups that differ in nationality, life experience (e.g., adversity), or sex. Regardless of the basis for putatitive differences, when one wishes to use a test validated in one group to measure another, examination of the test characteristics in the new population is essential.
+
+Just a few considerations: Are the items well understood in the new group? Does the item pool have high content validity (e.g., are any concepts missing)? Are the item psychometrics (e.g., mean or factor loading) similar between groups? Are total scores on the test similar?
+
+More detailed analyses of differences between groups require formal tests of *measurement invariance*. Measurement invariance (MI) models seek to understand what aspects of the test differ (statistically) between groups or over time. The conceptual emphasis of MI is whether the test measures the same latent construct in different groups. If it does, then we can make substantive inferences about the groups such as whether a trait such as neuroticism is higher in men than women. If the test demonstrates problematic *noninvariance* (sometimes also called differential item functioning [DIF]), then we should not interpret (most) differences betewen groups. MI is a bigger topic that we'll return to later in the term.
+
+# Scale of measurement
+
+As a quick reminder of undergraduate statistics, remember that there is a distinction between ordinal and interval scales. In ordinal scaling, the anchors for an item (e.g., 1-5 representing 'not at all' to 'very much') are only assumed to be rank ordered appropriately, but there is not an assumption about the spacing between anchors.
+
+For interval scales, however, the anchors underlying an item are assumed to be equally spaced such that the distance between 1 (not at all) and 2 (a little bit)  is identical to the distance between 2 (a little bit) and 3 (somewhat). Assuming interval scaling allows one to treat the item scaling as linear, enabling analyses such as regression and factor analysis. In particular, these methods represent a linear relationship anong variables, whether latent or observed. In factor analysis, the factor loading represents the unit change in the *indicator* for a unit change in the *factor*. 
+
+Interval scaling is an *assumption* in many psychometric tests, and one not often examined closely. As we'll cover later in the term, one can test factor models that treat the indicators as *ordinal* by defining a set of threshold parameters that represent the psychometric distance among anchors for an indicator. For example, a 1-5 Likert-type item would be represented by four threshold parameters, each defining the placement of a cut point/threshold between two adjacent anchors. 
+
+# Reliability
+
+As mentioned above, relability reflects the proportion of variation in observed data that is linked to meaningful variation in the latent trait relative to error variation. If we accept the premise that observed data are a combination of 'true score' and 'error' components, it follows that variation in observed data can be decomposed into true variation and error:
+
+$$
+s^2_{Y} = s^2_{Y_t} + s^2_{Y_e}
+$$
+
+That is, we can consider variability in a sample on a random variable $Y$ due to the true scores and error components. Yet in real data, this decomposition is not well defined -- how could we know what was signal versus noise?
+
+We can express this problem as:
+
+$$
+r_{YY} = \frac{s^2_{Y_t}}{s^2_{Y_t} + s^2_{Y_e}}
+$$
+
+That is, we are interested in quantify the proportion of variation in $Y$ that is due to true score variation. Reliability coefficients range between 0 and 1, with 1 representing no influence of measurement error.
+
+Notably, if a variable is unreliable, then errors propagate and influence statistics based on such variation. For example, the correlation of two unreliable variables (i.e., $r_{YY}$ < 1) must be lower than the correlation of the true scores on those variables:
+
+$$
+r_{X_t,Y_t} = \frac{r_{X_o,Y_o}}{\sqrt{r_{XX} r_{YY} }}
+$$
+
+## Internal consistency
+
+Given the intractability of identifying reliability coefficients directly based on the *true scores*, psychologists have developed a number of other practical strategies for quantifying reliability. The most common is internal consistency, which seeks to represent the similarity of scores on a multi-item scale. That is, if we believe that 10 items on our test measure cognitive symptoms of depression, then scores on those items should correlated highly with each other. If they do not, it could reflect a) that the items do not tap into the same underlying construct, and/or b) that some items are measured unreliably.
+
+Internal consistency measures include split-half reliability, KR-20, and coefficient alpha. We'll focus on coefficient alpha because it is common and is equivalent to KR-20 for binary data (which is the focus of KR-20). Coefficient alpha considers the covariance of the items underlying a putative latent variable relative to total variation in the summed scores. Let's simulate 4 items with the following descriptives and correlation structure:
+```{r}
+mu <- rep(0,4)
+Sigma <- tribble(
+  ~a, ~b, ~c, ~d,
+  1, 0.2, 0.3, 0.4,
+  0.2, 1, 0.7, 0.5,
+  0.3, 0.7, 1, 0.3,
+  0.4, 0.5, 0.3, 1
+)
+
+abcd = data.frame(MASS::mvrnorm(1000, mu=mu, Sigma=Sigma, empirical=TRUE))
+colnames(abcd) = LETTERS[1:4]
+psych::describe(abcd)
+cov(abcd)
+```
+
+To compute coefficient alpha, we need to compute the variance of the total scores (i.e., the sum of the four items): $s^2_{Y_o}$.
+
+```{r}
+totvar <- abcd %>% mutate(totscore = A + B + C + D) %>% summarize(var(totscore))
+print(totvar)
+```
+
+Next we need to compute the covariances among variables, $s_{ii'}$, then sum all of these. Note that $ii'$ denotes cells of the covariance matrix where $i$ is not equal to $i'$, or where the row is not equal to the column. Simply put, this means to ignore the diagonal of the covariance matrix, which contains the variances of the variables.
+
+```{r}
+cmat <- cov(abcd)
+covsum <- sum(cmat) - sum(diag(cmat))
+print(covsum)
+```
+
+Coefficient alpha is then the ratio of summed item covariances relative to total variance, normalized by the number of items:
+
+$$
+r_{YY} = \frac{k}{k-1} \frac{\sum{s_{ii'}}}{s^2_{Y_o}}
+$$
+
+```{r}
+k <- ncol(abcd)
+coefficient_alpha <- (k/(k-1)) * (covsum/totvar)
+names(coefficient_alpha) <- "raw_alpha"
+print(coefficient_alpha)
+```
+This and other information can also be gleaned from the handy `alpha` function in the `psych` package:
+
+```{r}
+psych::alpha(abcd)
+```
+
+Notice how coefficient alpha can be recomputed if a given item is dropped from the scale. Thus, items that have low positive covariance with the others will tend to detract from the numerator of the calculation, while not sytematically changing the denominator, driving the alpha estimate down. Altogether, the intuition is that greater positive *covariation* among items relative to their variation in their sum helps to quantify internal consistency, a measure of reliability.
+
+One solution for improving a scale's internal consistency is to identify items that have stronger inter-item correlations, either by developing the item pool, or dropping items with low inter-item covariation.
+
+## Test-retest reliability
+
+This alternative metric computes the correlation of scores at one administration and another, separated in time. If the test is reliably assessing a stable, underlying trait, the correlation of scores between assessments should be high. However, if the latent variable changes over time (e.g., symptoms of depression), one would not expect a high test-retest reliability. Furthermore, the expected rate of change may dictate how quickly one would reassess compute test-retest reliability. Test-retest reliability also assumes that the measurement error is similar in magnitude over time. 
+
+# Dimensionality
+
+The dimensionality of a psychometric test refers to the number of important *latent variables* thought to underlie responses on items. Recall that in SEM, the disturbance of an endogenous variable partly reflects unmeasured latent causes. Thus, in psychometric test development, we are typically interested in single latent causes for each item, since this eases the interpretation of the underlying factors. For example, if an item "I have difficulty getting out of bed in the morning" is strongly related to a factor that seems to reflect neurovegetative symptoms of depression, we can potentially sum the items on that factor to obtain an estimate of latent standing on this dimension.
+
+## Simple structure
+
+In tests with more than one (sub)scale, scientists typically hope to achieve a model of latent structure in which each item loads strongly onto one factor, but not others. For example, if our 60-item depression test appears to have subscales for cognitive, neurovegetative, and affective symptoms, then in an ideal scenario, each item would load strongly onto one scale (e.g., item 2 has a factor loading of 0.8+ on the cognitive subscale), but have only trivial association with the other two scales (e.g., factor loadings of 0.1).
+
+If all items (approximately) satisfy this criterion, then we say that the test has *simple structure*. This is a desirable property because it aids the interpretability of the test, especially the factor scores. Simply put, tests with simple structure represent the view that there is a single (strong) latent cause for each item. On the other hand, if an item loads onto two factors (latent variables), then the model represents that there are two latent causes, which makes it more difficult to understand what an indicator measures.
+
+When an item has non-trivial loading onto two or more factors, this is often called *cross-loading*, referring to the lack of one-to-one factor-indicator correspondence. Although there is not a not a formal rule for identifying cross-loading, rules of thumb suggest that cross-loadings between 0.3 and 0.5 are problematic. Furthermore, cross-loading is especially problematic if there is not a strong primary loading. Thus, an item that has loadings of 0.6 and 0.5 onto two factors is indeterminate and would often be dropped by test developers as a flawed item. On the other hand, an item with 0.8 and 0.3 loadings is less troublesome.
+
+These rules of thumb come from the fact that standardized factor loadings can represent the correlation between an item and its underlying factor. As we'll get to next week, in exploratory factor analysis (EFA), one often analyzes a correlation matrix. As a result, if *and only if* the factors are uncorrelated (orthogonal), the factor loadings are in correlational units. As a rule of thumb, then, in the case of standardized loadings (factor variance = 1.0) and uncorrelated factors, the variance in the item is explained by:
+
+$$
+Var(y_i) = \lambda_{i1} \psi_1 + e_i
+$$
+where $\psi_1 = 1.0$, indicating that the variance of the factor is one. Consequently, if we want to estimate the proportion of variance explained in a variable $y_i$ by a factor, it is:
+
+$$
+r^2_i = \lambda_{i1}^2
+$$
+And proportion of unexplained variance is:
+
+$$
+e_i = 1 - \lambda_{i1}^2
+$$
+These equations only hold if item *i* loads only onto a single factor, here factor 1. Otherwise, the explained variance for item *i* is the sum of all squared loadings multiplied by the corresponding factor scores for all *m* factors:
+
+$$
+r^2_i = \sum_{j=1}^{m}\lambda_{ij}^2
+$$
+
+## Unidimensional versus multidimensional structure
+
+Scales can be *unidimensional*, meaning that all indicators are thought to reflect a common latent cause. Multidimensional tests, on the other hand, have multiple latent variables, each of which typically reflects a substantive subscale (such as our neurovegetative symptom example above). Most researchers who develop tests strive for *simple structure* in multidimensional tests. Thus, when considering multidimensional relative to unidimensional tests, there are two key differences:
+
+1.  How well does the test satisfy simple structure? That is, how much ambiguity is there in each item?
+2.  How correlated are the latent variables with each other?
+
+The first consideration underscores that simple structure is not a binary decision.
+
+# Validity
+
+The validity of a test refers to the interpretability of test scores for an intended purpose or context. Thus, validity depends on both a theory about the construct(s), as well as psychometric evidence demonstrating an expected pattern of findings vis-a-vis other tests and criteria. As Furr notes in chapter 5, this definition implies several other considerations:
+
+1.  Validity focuses on the *outputs* of a test, that is the scale scores, not the underlying measurement model or items.
+2.  Validity is a matter of degree.
+3.  Validity depends on psychological explanation, composed of both theory and empirical evidence.
+4.  Tests are contextually constrained. Thus, a test can only be valid in an appropriate, validated context.
+5.  Validation is more of a journal through the nomological network than a statistical model.
+
+## Construct validity
+
+Although there are different forms of validity, *construct validity* is paramount and superordinate, encompassing essentially all evidence that informs an understanding of a latent construct. Thus, construct validity includes:
+
+1.  Test content: does it measure the domain?
+2.  Internal/latent structure of the test: do we understand the manifestation of the latent variable in the data?
+3.  Associations with other variables: does the test align with outside variables/criteria in expected ways?
+4.  Response processes: Do the psychological processes that lead to responses reflect the influence of the construct?
+5.  Consequences of application: Does using the scale for an applied purpose (e.g., prediction or evaluation) provide useful information that validates the construct?
+
+## Content validity
+
+Does the test reflect a careful articulation of the construct that has informed a detailed analysis of the test content? Tests with high content validity should reflect a clear theory, often incorporate the input of experts, and should be evaluated regularly to ensure adequate coverage of the content domain.
+
+## Face validity
+
+Face validity refers to how well a test *appears* to measure a specific construct, especially as perceived by respondents (or those unfamiliar with the domain). Thus, face validity has to do with apparent transparency, though a face valid test may not have content validity.
+
+## Internal structure
+
+This relates back to measurement models and dimensionality. Does the structure of the scale (which items load onto which factors, and how strongly) accurately reflect the theory about the construct? If a theory leads a scientist to generate an item pool with content validity, but psychometric evaluation suggests a poor alignment with the theory, this is a problem of internal structure. For example, a scientist may believe that intelligence is composed of three distinct facets (working memory, verbal comprehension, and abstract reasoning), but psychometric evaluation of indicators generated from this theory may suggest only a single factor underlies intelligence.
+
+## Associative validity
+
+I use this term to encompass convergent, discriminant, predictive, and concurrent validity, all of which have to do with the pattern of associations between a test of interest and other variables in the nomological network. 
+
+*Convergent validity* refers to the positive association of a test with other measures of related constructs (e.g., self-reported depression correlating with food intake coded by observation). 
+
+*Discriminant validity* refers to the relative absence of associations between a test and unrelated constructs (e.g., depression scores should not correlate with cooking ability).
+
+*Predictive validity* is the ability of a test to predict a relevant outcome prospectively, such as SAT scores predicting college performance. This also sometimes described as a form of *criterion validity* (i.e., association of a test with an external criterion).
+
+*Concurrent validity* is the association of a test score with another measure collected at the same time. This could be a form of convergent validity, but is often used to describe associations with external criteria somewhat unrelated to the construct of interest. For example, are depression scores associated with social integration in college students?

@@ -151,7 +151,7 @@ $$
 $$
 This is called *Mahalanobis distance*, which a distance measure that quantifies how far $x$ is from the mean $\mu$ in standardized units of variance $\sigma^2$. Thus, it is in the units of a squared *z*-score. This measure of distance scales up well to multiple variables, facilitating multivariate normal estimation (most of SEM).
 
-Knowing this formula, we can test candidate values for $\mu$ and $\sigma^2$ to determine the probability that an observation was drawn from the candidate normal distribution. Let's start with a candidate distribution with $\mu = 2$ and $\sigma^2 = 5$. Note that this is likely to be a bad fit given our *population* (aka 'groundtruth') parameters used in the simulation above. The population has $\mu = 50$ and $\sigma^2 = 50$
+Knowing this formula, we can test candidate values for $\mu$ and $\sigma^2$ to determine the probability that an observation was drawn from the candidate normal distribution. Let's start with a candidate distribution with $\mu = 2$ and $\sigma^2 = 5$. Note that this is likely to be a bad fit given our *population* (aka 'groundtruth') parameters used in the simulation above. The population has $\mu = 50$ and $\sigma^2 = 50$.
 
 Here are the probabilities (computed using the pdf equation above) for the first five observations:
 
@@ -264,7 +264,7 @@ $$
 \frac{1}{(2 \pi)^{p/2} | \boldsymbol{\Sigma} |^{1/2}} e^{-(\mathbf{x}_i-\boldsymbol{\mu})'\boldsymbol{\Sigma}^{-1}(\mathbf{x}_i-\boldsymbol{\mu})/2}
 $$
 
-Note that $ | \boldsymbol{\Sigma} |^{1/2}} | $ denotes the square root of the *determinant* of the covariance matrix (details in previous matrix algebra lecture). Also, $p$ is the number of endogenous variables. We can re-express this as a log-likelihood of a vector of observations for a given *individual* $i$:
+Note that $ | \boldsymbol{\Sigma} |^{1/2} $ denotes the square root of the *determinant* of the covariance matrix (details in previous matrix algebra lecture). Also, $p$ is the number of endogenous variables. We can re-express this as a log-likelihood of a vector of observations for a given *individual* $i$:
 
 $$
 \textrm{log}(\mathcal{L}(\mathbf{x}_i|\boldsymbol{\mu}, \boldsymbol{\Sigma}, model)) = 
