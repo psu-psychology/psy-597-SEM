@@ -85,7 +85,7 @@ Thus, in LTMs, both item characteristics and person characteristics matter in th
 
 ### Common factor model
 
-As a quick reminder, the common factor model is the most latent trait model, and the one we will use primarily in SEM. This model instantiates the view that a set of indicators reflect the influence of an underlying factor. The common factor model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
+As a quick reminder, the common factor model is the most ubiquitous latent trait model, and the one we will use primarily in SEM. This model instantiates the view that a set of indicators reflect the influence of an underlying factor. The common factor model scales well to multiple factors, each with its own indicators. And factors can either be uncorrelated (aka orthogonal) or correlated (aka oblique).
 
 ![](common_factor_model-01.svg)
 
