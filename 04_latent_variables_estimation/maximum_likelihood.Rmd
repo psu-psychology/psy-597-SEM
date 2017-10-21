@@ -105,7 +105,7 @@ Critically, the log-likelihood of the data given the parameters of this gamma di
 gfit$loglik
 ```
 
-*N.B.* Higher likelihood estimates are always better!! Thus, even though this is negative, the larger it is, the more likely the data are given the parameters and model. The log-likelihood estimate provides an essential measure of *relative fit* between the data and the model (with its parameters).
+*N.B.* Higher likelihood estimates are always better! Thus, even though this is negative, the larger it is, the more likely the data are given the parameters and model. The log-likelihood estimate provides an essential measure of *relative fit* between the data and the model (with its parameters).
 
 ## Fitting the data using the correct underlying distribution (i.e., normal)
 

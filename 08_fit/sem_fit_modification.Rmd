@@ -755,7 +755,7 @@ When examining standardized residuals, remember that, as in null hypothesis sign
 
 ### Residuals in correlation units
 
-We can also simply convert raw residuals into correlational units (standardize variances to 1) if that is more intuitive. These units can give us an sense of misfit on a common scale, where we might consider values $|r| < .05$ as trivial a priori (just a rule of thumb). 
+We can also simply convert raw residuals into correlational units (standardize variances to 1) if that is more intuitive. These units can give us an sense of misfit on a common scale, where we might consider values $|r| > .10$ as troubling a priori (just a rule of thumb). 
 
 ```{r}
 resid(mstruct_saturated, type="cor")
