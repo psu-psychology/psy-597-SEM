@@ -1,0 +1,43 @@
+---
+title: "PSY 597 - Structural Equation Modeling"
+author: "Michael Hallquist"
+date: "Fall 2017"
+output:
+  html_document:
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: no
+    fig_width: 9 
+    fig_height: 6 
+---
+<style type="text/css">
+body{ font-size: 20px; max-width: 1600px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+p { padding-top: 10px; padding-bottom: 10px; }
+pre { font-size: 16px; }
+</style>
+<br/><br/>
+![](https://www.r-project.org/Rlogo.png)
+<br/><br/>
+Welcome to PSY 597 - *Structural Equation Modeling*, taught at Penn State University by Michael Hallquist. This website provides access to lectures for the Fall 2017 session. For access to the `Rmd` files containing all code, see [here](https://github.com/psu-psychology/psy-597-SEM).
+
+This graduate course is provides an applied introduction to structural equation modeling (SEM) in the social sciences.  The goal is to cover fundamental topics in measurement and structural models and to develop the knowledge to critique applications of SEM in the research literature. Topics will include latent variables, factor models, path analysis, multiple-group analysis, model comparison, and equivalent models. If time permits, students will also be introduced to more advanced topics such as longitudinal SEM, models of change, mixture models, and multilevel SEM. Analyses will be conducted in R using the lavaan package, but the instructor will provide support for testing equivalent models in Mplus individually, if requested. Students are encouraged to use data from new or ongoing research projects for SEM applications in class.
+
+# Lectures
+
+1.  [Correlation and regression](01_correlation_regression/01_Correlation_and_Regression.html)
+2.  [SEM Basics and Matrix Algebra](02_sem_basics/matrix_algebra_review.html)
+3.  Path Analysis
+    -  [Lecture](03_path_models/path_analysis_fundamental.html)
+    -  [Demo](03_path_models/path_analysis_demo.html)
+4.  Latent Variables
+    -  [Lecture](04_latent_variables_estimation/latent_variables.html)
+    -  [Maximum Likelihood](04_latent_variables_estimation/maximum_likelihood.html)
+5.  [Psychometrics](05_psychometrics/psychometrics_overview.html)
+6.  [Factor Models](06_factor_models/factor_models.html)
+7.  Full SEM (to be posted)
+8.  [Model Fit and Modification](08_fit/sem_fit_modification.html)
+9.  [Model Comparison, Equivalence, Nesting, Evidence](09_model_comparison/model_comparison.html)
+    
