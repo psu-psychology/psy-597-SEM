@@ -1,0 +1,296 @@
+---
+title: "Full SEM Specification"
+subtitle: "PSY 597 Week 7"
+author: "Benjamin Johnson; Michael Hallquist"
+date: "5 Oct 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 24px; max-width: 1400px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, mlbench, lattice, lm.beta, semPlot, DiagrammeR, matrixcalc)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3) 
+```
+
+# Overview of full SEM
+
+As we have discussed, full SEM contains both a **measurement** component and a **structural** component.  The measurement component is a form of *factor analysis* in which the researcher determines how many latent variables underlie a set of data and what is their relation to the observed variables. The structural component is a form of *regression* (i.e., as in path models) in which certain variables predict other *endogenous* variables, representing what is assumed to be a causal process. If a variable is not predicted by anything other variable (latent or observed) in the model, it is called *exogenous*. In full SEM, the structural (regression) component of the model often reflects relationships among the latent variables defined by the measurement component of the model.
+
+# The measurement model
+
+Whereas EFA tends to be a data-driven procedure (i.e., the computer determines how indicators load onto factors and provides statistical guidance on how many factors underlie the data), CFA is a hypothesis-testing framework.  This means *you* as the researcher specify how many latent variables contribute to the covariance among your observed variables and decide specifically which indicators are caused by which factors.  This point emphasizes the importance of *model comparison* in CFA (and SEM) as another plausible model may fit your data even better than the initial model you test.
+
+## Identification: measurement model
+
+### Minimum number of indicators
+In the same way that you can only solve for as many unknowns as you have equations in algebra, you can also only estimate as many free parameters in CFA as you have degrees of freedom (derived from the number of unique cells in the data covariance matrix).  This requirement is identical to that in path analysis, where there must be at least as many pieces of information produced by your data as the number of paths, variances, and covariances you wish to estimate.  As a reminder, we are typically only interested in *overidentified* models where there $df > 0$ since this is both more parsimonious than a saturated model (where all covariances are uniquely estimated) and allow for tests of model fit. The requirement that parameters be estimable (as opposed to having an infinite number of values that yield identical fit as in $a + b = 6$) is called **identification**. In CFA, we can derive the following rule (Kline Rule 9.1, p.201) to determine the minimum number of indicators we will need per factor in our model:
+
+**Rule 9.1**
+<p>
+1. 3+ indicators are necessary for a factor in a model with one factor.
+2. 2+ indicators are necessary for each factor in a model with two or more factors.
+
+However, it is worth noting that these requirements only determine if a model is technically *identified*.  There may be other problems that arise in model estimation if the indicator-per-factor ratio is low, especially with small samples.  Thus, Kenny (1979, p. 143) humorously recommends the following:
+
+"Two *might* be fine, three is better, four is best, and anything more is gravy"
+
+### Scaling
+
+Furthermore, in CFA there is a requirement that *every latent variable must be scaled*, including the error terms, which we consider to be latent (but unmeasured) contributors to our indicators.  Scaling is necessary as latent variables are unmeasured and therefore do not have any innate scale, unlike manifest variables (e.g., a Likert scale from 1-5).
+
+There are two ways to scale factors in CFA.  
+
+1. **Unit loading identification (ULI) constraint**: Constraining the loading of one indicator on each factor to 1. 
+2. **Unit variance identification (UVI) constraint**: Constraining the variance of each factor to 1.
+
+**ULI** requires picking an indicator for each latent factor whose loading to constrain to 1. In statistical packages ULI is generally automatically utilized unless the researcher indicates otherwise, and the first indicator in a line of code is chosen to have the constrained loading ($\lambda_y1 = 1$).  This is the case in lavaan.  
+
+For instance, in the following case, the loading of *y*<sub>1</sub> will be constrained to 1 when analyzed: 
+<p>
+<center>`F1 =~ y1 + y2 + y3`</center>
+<p>
+Generally, model fit and parameter estimates will not differ regardless of which indicator is selected to be constrained in an SEM when using ULI.  One can compare this process to centering a vector of data around different numbers: the relationship among the data will not change regardless of which value is made zero.  
+
+![](ULI_data.png)
+<p>
+<center>![](ULI_image.png)</center>
+
+A potential issue with using ULI for scaling may occur if the reliability of indicators of a factor vary widely.  When all indicators have similar reliability, any can be selected as the reference indicator ($\lambda_y = 1$).
+
+Using **UVI** standardizes a latent variable by fixing its variance to 1, which may provide the advantage of simplicity (e.g., using z-scores instead of undstandardized predictors in a regression model).  However, UVI is generally only applicable to *exogenous* variables as the variance terms of endogenous variables are *freely estimated* as disturbances in an SEM and cannot be constrained. While in a model with no structural component (e.g., CFA) this is not an issue, full SEM models may require using ULI rather than UVI for endogenous variables.  Furthermore, using UVI in SEM with multiple groups with significantly different factor variance estimates, or in longitudinal analyses where variances change over time, will result in a lost of potentially meaningful information.  
+Notably, the scaling requirement to constrain either factor loadings or variances to 1 reduces the number of freely estimated parameters in a CFA model.  
+
+### Putting these together
+
+We can see in the following examples (drawn from Kline figure 9.5, p. 202) how to evaluate the identification status of various models and confirm the minimum indicators rule outlined above.
+
+Which of these models is/are identified?  How many degrees of freedom in each model (i.e., # variance/covariance units minus # of parameters estimated)?<font size="+1">*(Remember, you can calculate the number of variance/covariance units available as $k(k+1)/2$, where k = the number of indicators in your model).*</font>
+
+<center>Figure 9.5a</center>
+<center>![](9.5a.png)</center>
+
+Or with UVI instead of ULI... 
+
+<center>![](9.5a2.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.5b</center>
+<center>![](9.5b.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.5c</center>
+<center>![](9.5c.png)</center>
+<p><p>
+<font size="-4"><center>(for answers, click on "Code") &rarr; </center></font>
+```{r}
+#9.5a: Underidentified (3 variances/covariances - 4 free parameters = -1 df)
+
+#9.5b: Just identified (6 variances/covariances - 6 free parameters = 0 df)
+
+#9.5c: Overidentified (10 variances/covariances - 9 free parameters = 1 df)
+```
+
+
+<center></center>
+
+### Nonstandard CFA
+
+So far, each of the CFA models we have been looking at are considered *standard* CFA models: that is, they each have followed the following two conventions:
+
+1. No correlations among errors of the indicators (local/conditional independence)
+2. No indicator loads on more than one factor (simple structure)
+
+However, often we will want to consider *nonstandard* CFA models that may include correlated indicator errors and/or "complex indicators" (i.e., those that load onto multiple factors).  Identification of such models changes slightly from our rules above (9.1) as we now have added additional parameters to estimate in our model.  
+
+#### Correlated errors
+
+We can consider the following rules to apply in the case of **correlated errors** (Kline, p. 203):
+
+**Rule 9.2**
+<p>
+1. For *each factor*, at least one of the following must be true:
+      1) There are at least **three** indicators whose errors are uncorrelated.
+      2) There are at least **two** indicators whose errors are uncorrelated *and either*:
+        A.   these errors are uncorrelated with at least one indicator of another (correlated) factor, or
+        B.   the loadings of these indicators are constrained to be equal.
+  
+2. For *every pair of factors*, there are at least two indicators (one from each factor) with uncorrelated errors.
+
+3. For *every indicator*, there is at least one other indicator anywhere in the model with an uncorrelated error term.
+
+Evaluate the following figures:  Which are identified based on Rule 9.2?  Why?
+
+<center>Figure 9.6a</center>
+<center>![](9.6a.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.6b</center>
+<center>![](9.6b.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.6c</center>
+<center>![](9.6c.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.6d</center>
+<center>![](9.6d.png)</center>
+<p><p><p><p>
+
+<center>Figure 9.6e</center>
+<center>![](9.6e.png)</center>
+
+
+<font size="-4"><center>(for answers, click on "Code") &rarr; </center></font>
+```{r}
+#9.6a: Just identified (10 variances/covariances - 10 free parameters = 0 df; Rule 9.2.1.1 is satisfied in that there are at least three indicators whose errors are uncorrelated and Rule 9.2.3 is satisfied in that every indicator has at least one other indicator with an uncorrelated error term)
+
+#9.6b: Not identified (10 variances/covariances - 10 free parameters = 0 df; BUT Rule 9.2.1.1 is NOT satisfied as there are not three indicators whose errors are uncorrelated)
+
+#9.6c: Just identified (10 variances/covariances - 10 free parameters = 0 df; Rule 9.2 is satisfied)
+
+#9.6d: Not identified (10 variances/covariances - 10 free parameters = 0 df; BUT Rule 9.2.1 is NOT satisfied as there are not two indicators on factor 2 whose errors are uncorrelated)
+
+#9.6e: Overidentified (21 variances/covariances - 17 free parameters = 4 df; Rule 9.2 is satisfied) 
+```
+
+
+
+#### Complex indicators
+
+In the case of complex indicators, which load onto multiple factors, the following rules are necessary to ensure identification of the model:
+
+**Rule 9.3**
+<p>
+1. For every *complex indicator*:
+      1) *Each factor* on which the complex indicator depends must follow **Rule 9.2.1**, AND
+      2) *Every pair of factors* on which the complex indicator depends must follow **Rule 9.2.2**.
+      3) *If the complex indicator has correlated errors with another indicator*, for each factor on which the complex indicator depends, there must be at least one indicator with a single loading that does not have an error correlation with the complex indicator.
+      
+Is the following model identified?  Why or why not?
+
+<center>Figure 9.6f</center>
+<center>![](9.6f.png)</center>
+  
+<font size="-4"><center>(for the answer, click on "Code") &rarr; </center></font>
+```{r}
+#9.6f: Over identified (15 variances/covariances - 10 free parameters = 0 df; Rule 9.2.1.1 is satisfied in that there are at least three indicators of both factors whose errors are uncorrelated.  Rule 9.2.2 is satisfied in that there are at least two indicators between the factors that have uncorrelated errors.  Rule 9.2.3 is satisfied in that every indicator has at least one other indicator with an uncorrelated error term.  AND Rule 9.3.3 is satisifed in that there are no correlated errors with the complex indicator.)
+```
+
+
+
+### Empirical underidentification: measurement models
+It is worth noting that there is a second form of identification problem that may occur in CFA referred to as "empirical underidentification".  This occurs when there is some oddity in the data themselves that precludes a unique solution to the parameter estimates.  Generally speaking, this may occur when the model is misspecified or includes significant multicollinearity.  For example, empirical underidentification may happen with very highly correlated factors that both contribute to a complex indicator,  or a very low loading of an indicator that is necessary for identification of a model.  In these cases, the data essentially indicate that the model is misspecified and is really a different, underidentified model.  In general, it is better to be safe and not skirt too close the $df = 0$ line in any subpart of the model (e.g., each factor) so that all components of a model are overidentified. For example, including more than the minimum number of indicators per factor required for identification may help to preclude empirical underidentification.  
+
+
+# The structural model
+
+As mentioned previously, the structural component of SEM is essentially a set of regressions among variables, oftentimes latent variables that are estimated via the measurement component of the model. The structural component of SEM can be an informative tool for testing hypotheses about causal relationships among constructs of interest. However, given that structural relations among constructs depend on the accuracy of their measurement, checking the fit and interpretability of the measurement model is an important prerequisite to understanding causal relations among latent variables.
+
+## Identification: structural model
+
+Identification is also necessary for the structural component of SEM.  Kenny outlines three rules that must be met in order to determine the identification of the structural model:
+
+1. The number of estimated regression paths and correlations among exogenous variables and disturbances must not exceed the number of unique covariances among the constructs (i.e., the off-diagonal cells in the covariance matrix).  That is:
+
+$$
+k(k-1)/2 \geq p + \#r_{exo} + \#r_{dist} + \#r_{exo\&dist}
+$$
+where... <p>
+***k*** = the number of constructs in the structural model
+***p*** = the number of (regression) paths<p>
+***#r<sub>exo<sub>*** = the number of correlations between exogenous variables<p>
+***#r<sub>dist<sub>*** = the number of correlations between disturbances<p>
+***#r<sub>exo&dist<sub>*** = the number of correlations between exogenous variables and disturbances<p>
+
+
+
+
+What are the values of *k*, *p*, *#r<sub>exo<sub>*, *#r<sub>dist<sub>*, and *#r<sub>exo&dist<sub>* in the following models?  Which models satisfy the above rule?
+
+<center>Figure 10.1b</center>
+<center>![](10.1b.png)</center>
+<p><p><p><p>
+
+<center>Figure 10.6</center>
+<center>![](10.6.png)</center>
+
+
+  
+<font size="-4"><center>(for answers, click on "Code") &rarr; </center></font>
+```{r}
+#10.1b: 21 variances/covariances - 14 free parameters = 7 df; k = 3, p = 2, #r's all equal 0.)
+
+#10.6: 78 variances/covariances - 28 free parameters = 50 df; k = 4, p = 4, #r's all equal 0.)
+
+```
+
+
+
+2. Only one of the following four possible situations can be true for any pair of constructs X and Y:
+      1) X directly causes Y
+      2) Y directly causes X
+      3) X and Y have correlated disturbances
+      4) X and Y are correlated exogenous variables
+  
+
+How does the following model violate this rule?  
+  
+<center>Figure 10.x</center>
+<center>![](10.x.png)</center>
+
+<font size="-4"><center>(for the answer, click on "Code") &rarr; </center></font>
+```{r}
+#10.x: 45 variances/covariances - 21 free parameters = 24 df; F2 is a cause of F3 but F3 is also a cause of F2)
+```
+
+  
+3. There may be some exceptions to #2.  There are three situations in which potential problems with identification can be corrected by including a new variable into the model, called an *instrumental variable*.  This variable can help correct for problems with estimation by explaining variability in an exogenous variable. There are three problematic situations that may be able to be resolved by including instrumental variables into a model.  
+      1) Spuriousness: the exogenous variable both causes the endogenous variable and has an error term correlated with the disturbance of the endogenous variable (presumably because an unmeasured variable causes both the exogenous and endogenous variables).
+      2) Reverse causation (aka feedback loop): the endogenous variable may cause the exogenous variable
+      3) Measurement error in the predictor: measurement error in an exogenous variable that only has a single indicator/is manifest. 
+  
+It is worth noting that these situations may occur quite frequently in reality and may be worth modeling.  Researchers often make assumptions when creating an SEM model that may be untenable in the real-world, such as assuming that all constructs relevant to a model have been included *in* the model.  These assumptions are implicitly made during model specification.  For instance, one may hypothesize that self-mutilation (e.g., cutting) (Y) is driven by the experience of shame (X).  However, cutting may also *result in* further increases in shame, indicating a feedback loop among these phenomena.  If a researcher does not include a causal path from Y to X in their model, they are making the erroneous assumption that shame causes cutting but not the reverse.  
+
+Thus, including instrumental variables to ensure model identification may allow a researcher to more accurately depict a real-world process (albeit at the cost of parsimony). 
+
+(For more on instrumental variables, see <a href="http://davidakenny.net/cm/iv.htm">this page on David Kenny's website.</a>)
+
+### Empirical underidentification: structural models
+
+As in the case of the measurement component of SEM, the structural component may also incur issues with *empirical identification*.  Again, these issues occur not in deciding on the *theoretical/conceptual* model to test but in the actual data being evaluated.  For instance, no two variables (manifest or latent) can have a perfect correlation or problems with estimation will ensue.     
+
+## Identification of fully latent SEM models
+
+In order to determine the identification status of an SEM both the measurement component and the and structural component must meet their respective requirements for identification outlined above.  Note that this is only the case in models in which *all variables included in the structural component are latent, with at least two indicators*.  In cases where observed variables are included in the structural component of a model, identification can still be obtained by turning observed variables into single-indicator latent factors with pre-specified error variances (see Kline p. 214-219). 
+
+
+#LISREL all-Y notation
+
+Before we get into the lavaan code behind a full SEM, let's revisit the notation used for the matrices that go into this analysis.  This will come in handy especially when we want to inspect our models for estimation problems or in order to improve model fit.  Standard matrix notation used in programs like lavaan derive from the original LISREL program, developed in the 1970s, one of the first widely used SEM programs. Lavaan uses the simpler version of LISREL notation, referred to as *"all-Y" notation*, which ignores the difference between exogenous and endogenous variables in the model, leaving the researcher to distinguish these themself (e.g., via a diagram).  For instance, loadings for both exogenous and endogenous variables are included in the lambda matrix. 
+
+
+| Parameter         | Matrix                | English     | Description                                        |
+|-------------------|-----------------------|-------------|----------------------------------------------------|
+|$$\lambda_y$$      |**$$\Lambda_y$$**      |lambda-y     | loadings for all manifest (measured) variables     |
+|$$\psi$$           |**$$\Psi$$**           |psi          | covariance matrix of latent variables, disturbances|
+|$$\beta$$          |**$$B$$**              |beta         | regression paths                                   |
+|$$\theta_\epsilon$$|**$$\Theta_\epsilon$$**|theta-epsilon| measurement errors for all manifest variables      |

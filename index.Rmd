@@ -37,7 +37,9 @@ This graduate course is provides an applied introduction to structural equation 
     -  [Maximum Likelihood](04_latent_variables_estimation/maximum_likelihood.html)
 5.  [Psychometrics](05_psychometrics/psychometrics_overview.html)
 6.  [Factor Models](06_factor_models/factor_models.html)
-7.  Full SEM (to be posted)
+7.  Full SEM
+    -  [Model specification](07_full_sem/full_sem_specification.html)
+    -  [Model estimation demo](07_full_sem/full_sem_demo.html)
 8.  [Model Fit and Modification](08_fit/sem_fit_modification.html)
 9.  [Model Comparison, Equivalence, Nesting, Evidence](09_model_comparison/model_comparison.html)
     
