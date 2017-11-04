@@ -42,4 +42,8 @@ This graduate course is provides an applied introduction to structural equation 
     -  [Model estimation demo](07_full_sem/full_sem_demo.html)
 8.  [Model Fit and Modification](08_fit/sem_fit_modification.html)
 9.  [Model Comparison, Equivalence, Nesting, Evidence](09_model_comparison/model_comparison.html)
+10.  [Multiple groups and measurement invariance](10_invariance_groups/invariance_groups_constraints.html)
+11.  Mediation and moderation
+     -  [Lecture](11_mediation_moderation/mediation_moderation.html)
+     -  [Demo/Example](11_mediation_moderation/mediation_moderation_demo.html)
     
