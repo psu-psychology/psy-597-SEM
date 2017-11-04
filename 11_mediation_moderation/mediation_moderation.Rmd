@@ -468,7 +468,7 @@ $$
 If we expand the linear function in parentheses and rearrange a bit, we obtain:
 
 $$
-Y = i_Y + b1 X + b2 W + b3 WX + e_Y
+Y = i_Y + b1 X + b2 W + b3 XW + e_Y
 $$
 
 which looks like a typical two-way interaction model (remember always to include the individual predictor effects!).
