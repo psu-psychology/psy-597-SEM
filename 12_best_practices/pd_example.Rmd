@@ -1,0 +1,101 @@
+---
+title: "Example of SEM in the ‘Real World'"
+author: "Michael Hallquist"
+date: "9 Nov 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+    fig_width: 9 
+    fig_height: 6 
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 20px; max-width: 1600px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+p { padding-top: 10px; padding-bottom: 10px; }
+pre { font-size: 16px; }
+</style>
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, semPlot, psych, nonnest2, AICcmodavg, semTools, DiagrammeR)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3)
+#small function to plot all SEM diagrams using
+semPaths_default <- function(lavObject, sizeMan=15, ...) {
+  require(semPlot)
+  semPaths(lavObject, nCharNodes = 0, sizeMan=sizeMan, sizeMan2=4, sizeLat = 13, sizeLat2=7, ...)
+}
+```
+
+These are data from a clinical interview of personality pathology in a large mixed group of participants assessed in Pittsburgh (PI: Paul Pilkonis). We have 0/1/2 (absent, subthreshold, present) for diagnostic criteria of 10 DSM-IV personality disorders.
+
+```{r}
+load("pdsymptoms_for_sem.RData")
+psych::describe(allPD)
+```
+
+```{r}
+bpd_only_syntax <- '
+bpd =~ Borderline_6 + Borderline_1 + Borderline_2 + Borderline_3 + Borderline_4 + Borderline_5 + 
+  Borderline_7 + Borderline_8 + Borderline_9
+'
+
+bpd_model <- sem(bpd_only_syntax, estimator="MLR", allPD)
+summary(bpd_model, fit.measures=TRUE, standardized=TRUE)
+semPaths_default(bpd_model)
+modificationindices(bpd_model, minimum.value = 5)
+
+bpd_mod_syntax <- '
+bpd =~ Borderline_6 + Borderline_1 + Borderline_2 + Borderline_3 + Borderline_4 + Borderline_5 + Borderline_7 + Borderline_8 + Borderline_9
+
+Borderline_1 ~~ Borderline_3
+'
+
+bpd_model_mod <- sem(bpd_mod_syntax, estimator="MLR", allPD)
+resid(bpd_model_mod, "cor")
+```
+
+The maximum-likelihood approach assumes that indicators are normally distributed. But here, we have trichotmous data, which are unlikely to satisfy this assumption. The typical approach would be to estimate the model with an explicit categorical threshold structure that captures the distance between adjacent ordinal indicators.
+
+```{r}
+bpd_model_cat <- sem(bpd_only_syntax, estimator="WLSMV", allPD, ordered = paste0("Borderline_", 1:9))
+summary(bpd_model_cat, fit.measures=TRUE)
+```
+
+We still see some evidence of misfit.
+
+```{r}
+modificationIndices(bpd_model_cat, minimum.value = 5)
+```
+
+The model suggests freeing conditional independence for some items. Here are the diagnostic criteria from DSM-IV
+
+1.  frantic efforts to avoid real or imagined abandonment.
+
+2.  a pattern of unstable and intense interpersonal relationships characterised by alternating between extremes of idealization and devaluation. 
+
+3.  identity disturbance: markedly and persistently unstable self-image or sense of self.
+
+4.  impulsivity in at least two areas that are potentially self-damaging (e.g. spending, sex, substance abuse, reckless driving, binge eating). This does not include suicidal or self-harming behaviour. 
+
+5.  recurrent suicidal behaviour, gestures, or threats, or self-mutilating behaviour.
+
+6.  affective instability due to a marked reactivity of mood - intense feelings that can last from a few hours to a few days.
+
+7.  chronic feelings of emptiness.
+
+8.  inappropriate intense anger or difficulty controlling anger.
+
+9.  transient, stress-related paranoid ideas or severe dissociative symptoms.
+

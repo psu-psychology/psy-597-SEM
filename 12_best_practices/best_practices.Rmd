@@ -1,0 +1,177 @@
+---
+title: "Best practices in SEM"
+subtitle: "PSY 597 Week 12"
+author: "Michael Hallquist"
+date: "8 Nov 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+    fig_width: 9 
+    fig_height: 6 
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+<style type="text/css">
+body{ font-size: 20px; max-width: 1600px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+p { padding-top: 10px; padding-bottom: 10px; }
+pre { font-size: 16px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, semPlot, psych, nonnest2, AICcmodavg, semTools, DiagrammeR)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3)
+set.seed(15092) #to make simulated data the same across computers
+
+#small function to plot all SEM diagrams using
+semPaths_default <- function(lavObject, sizeMan=15, ...) {
+  require(semPlot)
+  semPaths(lavObject, nCharNodes = 0, sizeMan=sizeMan, sizeMan2=4, sizeLat = 13, sizeLat2=7, ...)
+}
+
+```
+
+These are recommended practices in using SEM adapted and extended from Kline.
+
+#Model specification
+
+-  Have a clear rationale for why SEM is the right tool for the job. Simpler is better: don't choose a multiple-groups path analysis using mean structure to capture differences between groups on a single observed variable if a two-sample *t*-test will do.
+
+-  What is the theoretical framework and empirical background that motivates your model?
+
+-  Define your latent variables clearly and why they are measured by particular indicators.
+
+-  Prefer multiple-indicator measurement, when possible.
+      + Exception: only one indicator has good psychometrics or validity.
+      + Exception: your sample size does not support a model with the large covariance matrix involved in setting up large measurement models.
+
+-  Verify that psychometrics are good for *every* indicator of a factor.
+
+-  Ensure that you have 3+ (good) indicators per factor.
+
+-  When possible, include an estimate of measurement error even for exogenous constructs. Recall the assumption of perfect measurement for exogenous variables in regression and standard SEM. If we have an estimate of score reliability for the indicator (e.g., previous data on test-retest), we may wish to setup a single-indicator latent variable so that we can account for measurement error. This is less satisfying than a multiple-indicator measurement model, but better than nothing.
+
+-  Have a clear rationale for directionality in your model. On the measurement side, recall reflective versus formative models. On the structural side, recall the Lee-Hershberger replacing rules and the more general problem of equivalent models. What supports the direction of arrows in your structural model?
+
+-  Try to avoid nonrecursive models (e.g., bidirectional effects) when possible. In standard covariance analyses, bidirectionality assumes equal, but opposite effects (equilibrium).
+
+-  Do not omit potential causes (variables) that correlate with variables included in the model.
+
+-  Do not be wedded to the assumption of conditional (aka local) independence. If there is a strong correlation between errors in a measurement model, or disturbances in the structural model, omitting it will misestimate the parameters you care about! This is especially true for latent variables, where omission of correlated residuals can substantially alter factor loadings. Check your modification indices!
+
+-  However, do exercise caution in including free parameters in your SEM post hoc. There should be a clear rationale for adding a path based on a modification index, such as similar wording of items, the same item measured over time, or some other specific reason why two variables should be related. Ignoring this principle can lead to overfitting and accepting more complex models that are less interpretable.
+
+-  Don't rule out the possibility that a variable reflects two (latent) causes. For example, there could be a legitimate reason to allow for cross-loading in a factor model. Eaton and colleagues (2011) found that borderline personality cross-loaded onto both internalizing and externalizing factors of psychopathology, which is an interesting substantive finding. It is usually best to deviate from simple structure *a priori*, however, or to have a clear rationale for adding a cross-loading post hoc.
+
+-  Items that load onto a factor should be positively correlated. Remember to reverse score appropriately. And if two items have a very weak or even negative correlation, they are unlikely to form a factor.
+
+-  Model building is often more scientifically defensible than model trimming. Start by specifying the model that you think is 'right' based on your theory and knowledge of the literature. Then allow modification indices or other information about misfit (e.g., residuals) to inform you about other important features of your data. Sometimes this is easy, like, "Oh yeah, items 21 and 25 on this impulsive behavior inventory both tap into self-injury. I could let their residuals correlate or even consider a separate factor." Sometimes it's much more difficult to decide whether changing the model is scientifically defensible.
+
+      +  Occasionally, I review a paper that takes the stance of "Our a priori model didn't fit well, but we didn't want to free things willy nilly, so we left it alone." This, IMHO, is not a defensible position because the parameters of a model that fits the data badly *cannot be trusted*. We should probably avoid making inferences about effects in a model whose CFI is .8 or whose RMSEA is .2. Because of the 'whack a mole' problem (Pat Curran) in which mispecifying one part of the model can affect parameters in other parts, misfit is something that must be addressed, or at least diagnosed.
+      
+      +  If you are on the fence about whether to alter the model to improve fit, try it both ways and examine change in the parameters that are of greatest interest (e.g., prediction of an outcome in the structural model). If you don't see much a change, and the model modification doesn't make sense scientifically, it is probably defensible to accept the model that fits worse, assuming it's in the ballpark (e.g., CFI > .9).
+      
+      +  Occasionally, I also review a paper that says, "We fit this 3-factor CFA for this scale because it's the one most people use in the literature. The fit was pretty bad, but we didn't want to mess with the model because it has been established." This is also scientifically untenable. If the model fits badly in *your* sample, the fact that it has fit other samples well is a weak justification for accepting a bad model. In fact, it may suggest something interesting, such as measurement noninvariance -- like the constructs manifest differently in your group of undergrads than their demographically representative population sample. If you don't have access to the dataset in which the candidate model fit well, you may never know the details, but you can certainly look at the factor loadings, structural coefficients, etc. from their paper to see where yours differ. And, I would encourage you to see what is needed to improve fit in your sample and what this may suggest about the substance of your findings.
+      
+-  In the case of measurement invariance testing, tau-equivalence, or equality constraints more broadly, it's often advisable to start with the more *complex* model first (e.g., configural) and then compare it against the more constrained model (e.g., weak invariance). In such cases, the constrained model is *nested* within the less constrained model, and the goal of the comparison is to see whether adding constraints substantially worsens fit (i.e., is the more parsimonious model just a good?).
+
+-  Be clear about whether mean structure is important to your model. For example, comparing groups on factor means requires mean structure on the latent variables, but also the indicators, so that item intercepts can be constrained to make the factor mean differences interpretable. If mean structure is part of the model, state it in your manuscript (and why) and potentially depict it using the triangle RAM notation in your diagrams.
+
+-  Push yourself to have specific hypotheses (minimally direction and rough effect size) for all key parameters in the model. I think this is more important for regression paths (factor loadings or structural regression) than for variances and error variances. Nevertheless, if you don't have a general idea of what to expect for a parameter, can you justify the reason for estimating it?
+
+-  Describe and test alternative models that are theoretically plausible (either your theory or a comparator). Don't setup a 'straw man' alternative. Test something that another researcher in your area might suggest.
+
+-  If you need to compare constructs over time, across groups, or both, state clearly how measurement invariance will be handled. There are good treatises on this such as Byrne et al. 1989 *Psych. Methods* and Widaman et al. 2010 *Child Development Perspectives*.
+
+# Identification
+
+-  Count the number of 'observations' (i.e., observed variables) and free parameters in your candidate SEM. Verify that your model is overidentified.
+
+-  Check identification yourself, including identification of components of the model. Part of the model may be underidentified even if there are overall positive degrees of freedom. In this case, the model may be empirically underidentified, leading to model convergence problems or invalid parameters.
+
+# Measures
+
+-  Clearly define how the constructs are operationalized and why set of indicators is thought to reflect a common factor.
+
+-  Provide estimates of score reliability in your sample. Coefficient alpha is popular, but as we talked about when discussing tau equivalence, you may wish to estimate reliability in a model that doesn't assume equal factor loadings. Also provide information about why the measure is valid.
+
+-  If missing data are a problem, try to identify auxiliary variables that predict missingness or that are correlated with the missing variables. Auxiliary variables can be included in the model using full information maximum likelihood (FIML) or multiple imputation.
+
+-  Avoid the 'jingle-jangle' fallacy of equating a test name (e.g., the Beck Depression Inventory) with the hypothetical construct (e.g., depression). SEM offers the possibility to integrate several measures of a construct, which is often an ideal approach to teasing apart a given test from the construct it is designed to measure.
+
+# Know your data
+
+-  Unless there is a good reason not to (e.g., 100 variables), report the raw correlation matrix, means, and SDs of most/all variables in your SEM. Since this is the target at which SEM aims, readers will benefit from getting a detailed sense of the associations among measured/manifest variables.
+      +  Also consider reporting the skewness and kurtosis of variables since these can undermine estimators that assume multivariate normality (standard ML). The `psych::describe` function is handy.
+
+-  Always check your data for outliers and invalid entries. A scatterplot matrix is often a useful way to see much of the data (check out lattice::splom or GGally::ggpairs) and look for odd patterns that suggest a need for further checks on the data fidelity.
+
+-  Be sensitive to issues of sample size and the cases:parameters ratio. If you are estimating many parameters in a small sample, the reader/reviewer may want you to discuss this as a limitation or state why it is unlikely to be a problem (e.g., strong convergence with previous research, good performance in a simulation study of power). If your sample is small and/or the cases:parameters ratio is low, consider Bayesian SEM, which has some potential advantages in handling parameter uncertainty in small samples.
+
+-  Be careful not to standardize observed variables across independent samples or longitudinal data. Standardization in these situations would assume equal variances since we set the variance to one when we *z* score. In a longitudinal context, this would render the model insensitive to the possibility that the variance changes over time. For example, in a psychotherapy study, we would hope that symptom scores decrease on average, *and* we also expect lower variance at later times (i.e., most people are benefitting).
+
+-  If you have more than a tiny amount of missing data (e.g., > 1%), tread carefully. Listwise deletion is rarely the right solution (only MCAR). Instead, consider FIML or multiple imputation. In lavaan, consider `missing="ML"` when fitting your model, which applies FIML estimation for endogenous variables.
+
+-  Verify that your covariance matrix is positive definite. Helpful: `matrixcalc::is.positive.definite()`. Otherwise, good luck fitting a SEM! If the covariance matrix fails this check, look for variables that are multicollinear with each other. My favorite approach (since it is easy) is to create a new dummy variable that is just random data, then regress the random data on *all* variables in the SEM, and compute variance inflation factor (VIF) using `car::vif` on the regression model. Values about 4 are troubling (only 25% variance unique), values above 10 are especially bad (< 10% variance unique). 
+      +  If you have collinearity problems, can you drop a variable, or take a ratio or combination of variables?
+      +  One option is to apply a 'ridging' factor, which adds a small amount of random noise along the diagonal (variances) of the covariance matrix. See `?lavOptions`. Typically this is on the order if `1e-5`.
+      
+-  Don't ignore nesting/nonindependence! If you have clustered data (dyads, schools, etc.), the same dilemmas that motivate multilevel regression apply to SEM. In particular, multilevel SEM may be necessary to handle the clustering in your data.
+
+# Estimation
+
+-  Ideally, provide syntax and/or data so that readers could reproduce your analyses. What about Github? :-)
+
+-  Specify the estimator selected and why. ML, ML, WLS, WLSMV, etc.
+
+-  Can indicators be assumed to be continuous and normally distributed? If the data are clearly ordinal (e.g., 3 levels), vanilla ML is often not the best choice. Weighted least squares with a threshold structure on ordinal indicators is usually the better idea.
+
+-  If you encounter estimation problems or nonconvergence, report this to the reader. Also report what you did to address the problem.
+
+-  Don't sign off on a model based on global fit alone. Always check the residuals (incl. standardized residuals).
+
+-  Be clear on how you adjudicate among alternative models. Quantify differences among models in terms of relative evidence -- don't be satisfied with a yes/no view. Recall the `aictab()` function, which helps to compare evidence in AIC terms.
+
+-  In SEMs with measurement and structural component ('true' SEMs), verify that the measurement model fits the data reasonably before being tempted to interpret structural coefficients. This usually involves a model in which the structural model is undirected (covariances only among latents) and saturated.
+
+-  Make sure that at least strong invariance is satisfied if you wish to compare means on latent variables. This point extends to longitudinal data with factors (aka second-order latent change models), where to understand change in constructs, one must verify that the constructs are the same across time.
+
+# Respecification
+
+Unfortunately, SEMs in the 'real world' of data are often imperfect in the *a priori* specification. Thusm we need to consider how to alter our model when it fits badly, rather than ignoring misfit or giving up on SEM altogether.
+
+-  Declare what indices of misfit informed the decision to respecify a model. This includes modification indices, residuals, and global fit statistics.
+
+-  Clearly state why the respecification is theoretically plausible and defensible.
+
+-  Be transparent in the *a priori* model versus *post hoc* modifications. This is embedded in the importance of good open science practices (e.g., differentiating between confirmatory and exploratory analyses).
+
+# Reporting results
+
+-  Provide a full table of all parameters in the SEM, including estimates, standard errors, *p*-values, and standardized estimates.
+
+-  Provide global fit statistics, especially $\chi^2$, CFI, RMSEA, RMSEA 90% CI, and SRMR.
+
+-  Ideally, provide a summary or detailed display of residuals. For example, what is the mean of the absolute value of correlation residuals? Are all correlation residuals $|r| < .1$?
+
+-  If there are indirect effects, report both direct and indirect effects clearly.
+
+-  When possible, report effect size estimates. The $R^2$ metric for endogenous variables is a good idea.
+
+-  Be wary of the term 'mediation' in cross-sectional data. Would saying 'indirect effect' be too weak to excite the reader? Hard-core mediation folks will tend to insist on temporal precedence: $X \rightarrow M \rightarrow Y$.
+
+-  If the scales are arbitrary, (completely) standardized effects may help to interpret the magnitude of effects. Likewise, when there are meaningful interactions, plot them rather than relying on significance tests.
+
+-  Can you split your dataset into test and validation samples (often splitting in half)? If so, you can fit a model in the test set and then look at model fit if the same parameters are applied in the validation sample. This helps to identify what parts of the model are stable across samples. If you can't split your sample, you might want to mention replication as a next step for your work... and do it!
