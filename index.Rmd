@@ -46,4 +46,6 @@ This graduate course is provides an applied introduction to structural equation 
 11.  Mediation and moderation
      -  [Lecture](11_mediation_moderation/mediation_moderation.html)
      -  [Demo/Example](11_mediation_moderation/mediation_moderation_demo.html)
-    
+12.  Best practices
+     -  [Lecture](12_best_practices/best_practices.html)
+     -  [Student Q&A](12_best_practices/q_and_a.html)
