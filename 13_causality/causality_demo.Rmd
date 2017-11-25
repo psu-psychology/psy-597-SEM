@@ -1,0 +1,260 @@
+---
+title: "DAG Demo in SEM"
+subtitle: "PSY 597 Week 13"
+author: "Michael Hallquist"
+date: "16 Nov 2017"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+    mathjax: default
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+    fig_width: 9 
+    fig_height: 6 
+  pdf_document:
+    code_folding: hide
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+---
+\newcommand{\ci}{\thinspace\perp\!\!\perp\thinspace}
+\newcommand{\nci}{\thinspace\not\mkern-7mu{\perp\!\!\perp}\thinspace}
+
+<style type="text/css">
+body{ font-size: 20px; max-width: 1600px; margin: auto; padding: 1em; }
+code.r{ font-size: 20px; }
+p { padding-top: 10px; padding-bottom: 10px; }
+pre { font-size: 16px; }
+</style>
+
+
+```{r setup, include=FALSE}
+if (!require(pacman)) { install.packages("pacman"); library(pacman) }
+p_load(knitr, MASS, tidyverse, viridis, lavaan, modelr, semPlot, semTools, DiagrammeR, dagitty, dagR)
+knitr::opts_chunk$set(echo = TRUE) #print code by default
+options(digits=3)
+set.seed(15092) #to make simulated data the same across computers
+
+#small function to plot all SEM diagrams using
+semPaths_default <- function(lavObject, sizeMan=15, ...) {
+  require(semPlot)
+  semPaths(lavObject, nCharNodes = 0, sizeMan=sizeMan, sizeMan2=4, sizeLat = 13, sizeLat2=7, ...)
+}
+```
+
+# DAG example from Venners video
+
+```{r, fig.height=1.2, fig.width=3}
+g <- dagitty('dag {
+    Smoking [pos="3,1"] 
+    COPD [pos="4,0"]
+    Coffee [pos="1,0"]
+    Stimulant_Tend [pos="2,2"]
+    Stimulant_Tend -> Smoking -> COPD
+    Coffee -> COPD
+    Stimulant_Tend -> Coffee
+    
+}')
+plot(g)
+```
+
+```{r}
+impliedConditionalIndependencies(g, "missing.edge")
+```
+
+```{r}
+dseparated(g, "Coffee", "COPD", c("Stimulant_Tend", "Smoking"))
+```
+
+## Feel free to extend the DAG
+
+Based on the video, how would you look into closing the back-door paths?
+
+#Rosenstein example
+
+For Lia's project, she is interested in testing the relationships among affective instability (AI), identity disturbance (ID), and impulsivity (IMP) in a cross-sectional undergraduate sample. The primary hypothesis is that identity disturbance mediates the relationship between affective instability and impulsivity.
+
+```{r, fig.height=1.2, fig.width=3}
+g1 <- dagitty('dag {
+    Aff_Ins [pos="2,1"] 
+    Ident [pos="1,0"]
+    Impul [pos="4,0"]
+
+    Aff_Ins -> Ident
+    Ident -> Impul
+}')
+plot(g1)
+```
+
+We might also consider whether the mediation through ID is not complete:
+
+```{r, fig.height=1.2, fig.width=3}
+g2 <- dagitty('dag {
+    Aff_Ins [pos="2,1"] 
+    Ident [pos="1,0"]
+    Impul [pos="4,0"]
+
+    Aff_Ins -> Ident
+    Ident -> Impul
+    Aff_Ins -> Impul
+}')
+plot(g2)
+```
+   
+An alternative model would be to change the mediator and independent variable. That is, what if AI mediates the relationship between ID and IMP?
+
+```{r, fig.height=1.2, fig.width=3}
+g3 <- dagitty('dag {
+    Aff_Ins [pos="1,0"] 
+    Ident [pos="2,1"]
+    Impul [pos="4,0"]
+
+    Ident -> Aff_Ins
+    Aff_Ins -> Impul
+}')
+plot(g3)
+```
+
+What are the testable implications for causal mediation?
+
+## d-Separation
+
+First, are AI and IMP *d*-separated if we do not condition on anything? That is, do we expect their marginal association to be zero?
+
+```{r}
+dseparated(g1, "Impul", "Aff_Ins")
+```
+
+No, under the DAG specified, we expect:
+
+$$
+\begin{align*}
+\textrm{IMP} \nci \textrm{AI} \\
+\textrm{IMP} \ci \textrm{AI} \: | \: \textrm{ID}
+\end{align*}
+$$
+
+What if we condition the AI-Impul relationship on identity disturbance? In this situation, affective instability and impulsivity *are* *d*-separated because conditioning on the mediator blocks the relationship between them. Thus, if there is a causal relationship between affective instability and impulsivity via identity disturbance, a model in which we regress impulsivity on affective instability *and* identity disturbance should reveal a *zero* conditional association between affective instability and impulsivity.
+
+```{r}
+dseparated(g1, "Impul", "Aff_Ins", "Ident")
+```
+
+What about the partial mediation case in which some of the causal relationship between AI and IMP is direct?
+
+First, what is the expected marginal association of AI and IMP (empty conditioning set)?
+```{r}
+dseparated(g2, "Impul", "Aff_Ins")
+```
+We do not expect AI and IMP to be marginally independent.
+
+What if we condition on the mediator, as before?
+
+```{r}
+dseparated(g2, "Impul", "Aff_Ins", "Ident")
+```
+
+Unfortunately, in this case, there is no testable prediction of conditional independence based on the mediator.
+
+$$
+\begin{align*}
+\textrm{IMP} \nci \textrm{AI} \\
+\textrm{IMP} \nci \textrm{AI} \: | \: \textrm{ID}
+\end{align*}
+$$
+
+## Implied conditional independencies
+
+What are the implied conditional independencies of these alternative graphs?
+
+For the first, the only implied CI is the one mentioned above.
+```{r}
+impliedConditionalIndependencies(g1, "missing.edge")
+```
+
+For the second DAG, partial mediation, there are no CIs. Remember that this is a saturated model. As such, changing the direction of the paths will yield equivalent DAGs. A model with no conditional indepencies between two variables means that we cannot test hypotheses about causal directionality.
+
+```{r}
+impliedConditionalIndependencies(g2, "missing.edge")
+```
+
+How many equivalent models can we fit to the saturated partial mediation case?
+```{r, fig.height=1.2, fig.width=3}
+eqdags <- equivalentDAGs( g2 )
+dummy <- lapply(eqdags, plot)
+```
+
+Here we have 6 equivalent models:
+
+```{r}
+length(eqdags)
+```
+
+What about in the full mediation case?
+
+```{r, fig.height=1.2, fig.width=3}
+eqdags <- equivalentDAGs( g1 )
+dummy <- lapply(eqdags, plot)
+#plot(g1)
+```
+
+Here, there are only 3 equivalent models, though they are quite conceptually distinct from a causality standpoint. The first is our candidate, the second is a fork arrangement in which identity disturbance is a common cause. The third reverses the direction of the mediated effects.
+
+Are there covariate adjustment sets that we could use to render the IV and DV conditionally independent?
+
+```{r}
+adjustmentSets(g1, exposure='Aff_Ins', outcome = 'Impul', type="all")
+```
+
+Nope...
+
+The general point is that causality is hard to corroborate in small models.
+
+Here's an example of when this can help:
+
+```{r}
+grViz("
+digraph g {
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 12, rankdir=LR]
+
+  # nodes for observed and latent
+  node [shape = circle, fontname = Arial]
+  x y a b z i
+
+{rank=same; a i z b}
+
+  edge [dir=none, fontname = Arial]
+  a:w -> z:w
+  a:w -> i:w
+  a:w -> b:w
+
+  edge[dir=forward, fontname=Arial]
+  a -> x
+  z -> x
+  i -> x
+
+  x -> y
+  z -> y
+  b -> y
+
+}")
+```
+
+The paths lacking arrows are part of a *partially* directed acyclic graph. This is a variant of DAGs in which the direction of some edges is unknown. This is different than a standard DAG where the double-headed arrow $\leftarrow \! \rightarrow$ denotes an unknown (latent) variable, $U$, that causes association. 
+
+```{r}
+ gadj <- dagitty("pdag { x[e] y[o] a -- {i z b}; {a z i} -> x -> y <- {z b} }")
+#plot(gadj)
+adjustmentSets( gadj )
+```
+
+In this scenario, conditioning the $x-y$ relationship on b and z, or a and z, would identify the unique causal relationship between x and y.
+
+```{r}
+impliedConditionalIndependencies(gadj, "missing.edge")
+```
+
