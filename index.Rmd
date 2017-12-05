@@ -52,3 +52,5 @@ This graduate course is provides an applied introduction to structural equation 
 13.  Causality and SEM
      -  [Lecture](13_causality/causality_in_sem.html)
      -  [Demo](13_causality/causality_demo.html)
+14.  [Longitudinal SEM](14_longitudinal/growth_modeling.html)
+
