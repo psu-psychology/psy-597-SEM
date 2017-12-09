@@ -1,0 +1,368 @@
+Mplus VERSION 8 (Mac)
+MUTHEN & MUTHEN
+12/09/2017   8:48 AM
+
+INPUT INSTRUCTIONS
+
+  TITLE:
+  this is an example of a two-level
+  	  regression analysis for a continuous
+  	  dependent variable with a random intercept and an observed covariate
+  DATA:
+  FILE = "ex9.1a.dat";
+
+  VARIABLE:
+  NAMES = y x w xm clus;
+   MISSING=.;
+   WITHIN = x;
+  	  BETWEEN = w xm;
+  	  CLUSTER = clus;
+  DEFINE:
+  CENTER x (GRANDMEAN);
+  ANALYSIS:
+  TYPE = TWOLEVEL;
+      ESTIMATOR=MLR;
+  MODEL:
+  %WITHIN%	
+  	  y ON x;
+  	  %BETWEEN%
+  	  y ON w xm;
+  OUTPUT:
+  STDYX RESIDUAL;
+
+
+
+INPUT READING TERMINATED NORMALLY
+
+
+
+
+this is an example of a two-level
+regression analysis for a continuous
+dependent variable with a random intercept and an observed covariate
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Number of observations                                        1000
+
+Number of dependent variables                                    1
+Number of independent variables                                  3
+Number of continuous latent variables                            0
+
+Observed dependent variables
+
+  Continuous
+   Y
+
+Observed independent variables
+   X           W           XM
+
+Variables with special functions
+
+  Cluster variable      CLUS
+
+  Within variables
+   X
+
+  Between variables
+   W           XM
+
+  Centering (GRANDMEAN)
+   X
+
+
+Estimator                                                      MLR
+Information matrix                                        OBSERVED
+Maximum number of iterations                                   100
+Convergence criterion                                    0.100D-05
+Maximum number of EM iterations                                500
+Convergence criteria for the EM algorithm
+  Loglikelihood change                                   0.100D-02
+  Relative loglikelihood change                          0.100D-05
+  Derivative                                             0.100D-03
+Minimum variance                                         0.100D-03
+Maximum number of steepest descent iterations                   20
+Maximum number of iterations for H1                           2000
+Convergence criterion for H1                             0.100D-03
+Optimization algorithm                                         EMA
+
+Input data file(s)
+  ex9.1a.dat
+Input data format  FREE
+
+
+SUMMARY OF DATA
+
+     Number of missing data patterns             1
+     Number of clusters                        110
+
+     Average cluster size        9.091
+
+     Estimated Intraclass Correlations for the Y Variables
+
+                Intraclass
+     Variable  Correlation
+
+     Y            0.570
+
+
+
+COVARIANCE COVERAGE OF DATA
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              Y             X             W             XM
+              ________      ________      ________      ________
+ Y              1.000
+ X              1.000         1.000
+ W              1.000         1.000         1.000
+ XM             1.000         1.000         1.000         1.000
+
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     Y                     2.034       0.042      -3.173    0.10%       0.490      1.599      2.108
+            1000.000       3.273      -0.183       7.527    0.10%       2.496      3.497
+     X                     0.000      -0.105      -3.802    0.10%      -0.787     -0.250     -0.004
+            1000.000       0.973       0.235       3.252    0.10%       0.265      0.765
+     W                     0.058       0.265      -2.558    0.91%      -0.881     -0.259      0.074
+             110.000       1.147      -0.066       2.752    0.91%       0.276      0.861
+     XM                    0.013       0.249      -1.368    0.91%      -0.640     -0.198      0.045
+             110.000       0.508      -0.278       1.850    0.91%       0.209      0.557
+
+
+THE MODEL ESTIMATION TERMINATED NORMALLY
+
+
+
+MODEL FIT INFORMATION
+
+Number of Free Parameters                        6
+
+Loglikelihood
+
+          H0 Value                       -1525.938
+          H0 Scaling Correction Factor      0.9402
+            for MLR
+          H1 Value                       -1525.938
+          H1 Scaling Correction Factor      0.9402
+            for MLR
+
+Information Criteria
+
+          Akaike (AIC)                    3063.876
+          Bayesian (BIC)                  3093.322
+          Sample-Size Adjusted BIC        3074.266
+            (n* = (n + 2) / 24)
+
+Chi-Square Test of Model Fit
+
+          Value                              0.000*
+          Degrees of Freedom                     0
+          P-Value                           0.0000
+          Scaling Correction Factor         1.0000
+            for MLR
+
+*   The chi-square value for MLM, MLMV, MLR, ULSMV, WLSM and WLSMV cannot be used
+    for chi-square difference testing in the regular way.  MLM, MLR and WLSM
+    chi-square difference testing is described on the Mplus website.  MLMV, WLSMV,
+    and ULSMV difference testing is done using the DIFFTEST option.
+
+RMSEA (Root Mean Square Error Of Approximation)
+
+          Estimate                           0.000
+
+CFI/TLI
+
+          CFI                                1.000
+          TLI                                1.000
+
+Chi-Square Test of Model Fit for the Baseline Model
+
+          Value                            491.881
+          Degrees of Freedom                     3
+          P-Value                           0.0000
+
+SRMR (Standardized Root Mean Square Residual)
+
+          Value for Within                   0.000
+          Value for Between                  0.000
+
+
+
+MODEL RESULTS
+
+                                                    Two-Tailed
+                    Estimate       S.E.  Est./S.E.    P-Value
+
+Within Level
+
+ Y          ON
+    X                  0.724      0.033     22.118      0.000
+
+ Residual Variances
+    Y                  1.022      0.041     25.117      0.000
+
+Between Level
+
+ Y          ON
+    W                  0.570      0.108      5.305      0.000
+    XM                 0.976      0.160      6.107      0.000
+
+ Intercepts
+    Y                  1.991      0.080     24.804      0.000
+
+ Residual Variances
+    Y                  0.571      0.088      6.486      0.000
+
+
+STANDARDIZED MODEL RESULTS
+
+
+STDYX Standardization
+
+                                                    Two-Tailed
+                    Estimate       S.E.  Est./S.E.    P-Value
+
+Within Level
+
+ Y          ON
+    X                  0.577      0.020     29.059      0.000
+
+ Residual Variances
+    Y                  0.667      0.023     29.116      0.000
+
+Between Level
+
+ Y          ON
+    W                  0.428      0.076      5.616      0.000
+    XM                 0.488      0.077      6.310      0.000
+
+ Intercepts
+    Y                  1.397      0.114     12.250      0.000
+
+ Residual Variances
+    Y                  0.281      0.052      5.392      0.000
+
+
+R-SQUARE
+
+Within Level
+
+    Observed                                        Two-Tailed
+    Variable        Estimate       S.E.  Est./S.E.    P-Value
+
+    Y                  0.333      0.023     14.529      0.000
+
+Between Level
+
+    Observed                                        Two-Tailed
+    Variable        Estimate       S.E.  Est./S.E.    P-Value
+
+    Y                  0.719      0.052     13.815      0.000
+
+
+QUALITY OF NUMERICAL RESULTS
+
+     Condition Number for the Information Matrix              0.335E-01
+       (ratio of smallest to largest eigenvalue)
+
+
+RESIDUAL OUTPUT
+
+
+     ESTIMATED MODEL AND RESIDUALS (OBSERVED - ESTIMATED) FOR WITHIN
+
+
+           Model Estimated Means
+              Y             X             W             XM
+              ________      ________      ________      ________
+                0.000         0.000         0.000         0.000
+
+
+           Residuals for Means
+              Y             X             W             XM
+              ________      ________      ________      ________
+                0.000         0.000         0.000         0.000
+
+
+           Model Estimated Covariances
+              Y             X             W             XM
+              ________      ________      ________      ________
+ Y              1.532
+ X              0.704         0.973
+ W              0.000         0.000         0.000
+ XM             0.000         0.000         0.000         0.000
+
+
+           Residuals for Covariances
+              Y             X             W             XM
+              ________      ________      ________      ________
+ Y              0.000
+ X              0.000         0.000
+ W              0.000         0.000         0.000
+ XM             0.000         0.000         0.000         0.000
+
+
+     ESTIMATED MODEL AND RESIDUALS (OBSERVED - ESTIMATED) FOR BETWEEN
+
+
+           Model Estimated Means
+              Y             X             W             XM
+              ________      ________      ________      ________
+                2.037         0.000         0.058         0.013
+
+
+           Residuals for Means
+              Y             X             W             XM
+              ________      ________      ________      ________
+                0.000         0.000         0.000         0.000
+
+
+           Model Estimated Covariances
+              Y             X             W             XM
+              ________      ________      ________      ________
+ Y              2.033
+ X              0.000         0.000
+ W              1.184         0.000         1.147
+ XM             0.806         0.000         0.543         0.508
+
+
+           Residuals for Covariances
+              Y             X             W             XM
+              ________      ________      ________      ________
+ Y              0.000
+ X              0.000         0.000
+ W              0.000         0.000         0.000
+ XM             0.000         0.000         0.000         0.000
+
+
+     Beginning Time:  08:48:09
+        Ending Time:  08:48:09
+       Elapsed Time:  00:00:00
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2017 Muthen & Muthen

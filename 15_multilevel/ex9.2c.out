@@ -1,0 +1,218 @@
+Mplus VERSION 8 (Mac)
+MUTHEN & MUTHEN
+12/09/2017   8:48 AM
+
+INPUT INSTRUCTIONS
+
+  TITLE:
+  this is an example of a two-level
+  	regression analysis for a continuous
+  	dependent variable with a random slope and a latent covariate
+  DATA:
+  FILE = "ex9.2c.dat";
+
+  VARIABLE:
+  NAMES = y x w clus;
+   MISSING=.;
+   BETWEEN = w;
+  	  CLUSTER = clus;
+  DEFINE:
+  CENTER x (GRANDMEAN);
+  ANALYSIS:
+  TYPE = TWOLEVEL RANDOM;
+      ESTIMATOR=MLR;
+  MODEL:
+
+      %WITHIN%	
+   	    s | y ON x;		
+  	  %BETWEEN%	
+  	    y s ON w x;
+  	    y WITH s;
+  OUTPUT:
+  STDYX RESIDUAL;
+
+
+
+*** WARNING in OUTPUT command
+  STANDARDIZED (STD, STDY, STDYX) options are available only for TYPE=TWOLEVEL RANDOM
+  with ESTIMATOR=BAYES.  Request for STANDARDIZED (STD, STDY, STDYX) is ignored.
+*** WARNING in OUTPUT command
+  RESIDUAL option is only available for TYPE=TWOLEVEL RANDOM with ESTIMATOR=BAYES.
+  Request for RESIDUAL is ignored.
+   2 WARNING(S) FOUND IN THE INPUT INSTRUCTIONS
+
+
+
+
+this is an example of a two-level
+regression analysis for a continuous
+dependent variable with a random slope and a latent covariate
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Number of observations                                        1000
+
+Number of dependent variables                                    1
+Number of independent variables                                  2
+Number of continuous latent variables                            1
+
+Observed dependent variables
+
+  Continuous
+   Y
+
+Observed independent variables
+   X           W
+
+Continuous latent variables
+   S
+
+Variables with special functions
+
+  Cluster variable      CLUS
+
+  Between variables
+   W
+
+  Centering (GRANDMEAN)
+   X
+
+
+Estimator                                                      MLR
+Information matrix                                        OBSERVED
+Maximum number of iterations                                   100
+Convergence criterion                                    0.100D-05
+Maximum number of EM iterations                                500
+Convergence criteria for the EM algorithm
+  Loglikelihood change                                   0.100D-02
+  Relative loglikelihood change                          0.100D-05
+  Derivative                                             0.100D-03
+Minimum variance                                         0.100D-03
+Maximum number of steepest descent iterations                   20
+Maximum number of iterations for H1                           2000
+Convergence criterion for H1                             0.100D-03
+Optimization algorithm                                         EMA
+
+Input data file(s)
+  ex9.2c.dat
+Input data format  FREE
+
+
+SUMMARY OF DATA
+
+     Number of missing data patterns             1
+     Number of clusters                        110
+
+
+
+COVARIANCE COVERAGE OF DATA
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              Y             X             W
+              ________      ________      ________
+ Y              1.000
+ X              1.000         1.000
+ W              1.000         1.000         1.000
+
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     Y                     2.045       1.000      -4.224    0.10%      -0.163      1.203      1.828
+            1000.000       7.046       2.558      17.676    0.10%       2.467      3.887
+     X                     0.000      -0.056      -3.560    0.10%      -1.019     -0.273      0.003
+            1000.000       1.401      -0.311       3.235    0.10%       0.307      1.018
+     W                    -0.106      -0.067      -2.364    0.91%      -0.879     -0.365     -0.079
+             110.000       0.808       0.110       2.177    0.91%       0.124      0.513
+
+
+THE MODEL ESTIMATION TERMINATED NORMALLY
+
+
+
+MODEL FIT INFORMATION
+
+Number of Free Parameters                       10
+
+Loglikelihood
+
+          H0 Value                       -3088.493
+          H0 Scaling Correction Factor      0.9978
+            for MLR
+
+Information Criteria
+
+          Akaike (AIC)                    6196.986
+          Bayesian (BIC)                  6246.063
+          Sample-Size Adjusted BIC        6214.303
+            (n* = (n + 2) / 24)
+
+
+
+MODEL RESULTS
+
+                                                    Two-Tailed
+                    Estimate       S.E.  Est./S.E.    P-Value
+
+Within Level
+
+ Residual Variances
+    Y                  1.026      0.052     19.706      0.000
+
+Between Level
+
+ S          ON
+    W                  0.569      0.094      6.087      0.000
+    X                  0.315      0.180      1.753      0.080
+
+ Y          ON
+    W                  1.132      0.109     10.372      0.000
+    X                  0.994      0.207      4.803      0.000
+
+ Y        WITH
+    S                  0.233      0.058      4.045      0.000
+
+ Intercepts
+    Y                  1.897      0.082     23.169      0.000
+    S                  0.987      0.071     13.836      0.000
+
+ Residual Variances
+    Y                  0.436      0.093      4.672      0.000
+    S                  0.368      0.056      6.547      0.000
+
+
+QUALITY OF NUMERICAL RESULTS
+
+     Condition Number for the Information Matrix              0.145E-01
+       (ratio of smallest to largest eigenvalue)
+
+
+     Beginning Time:  08:48:13
+        Ending Time:  08:48:13
+       Elapsed Time:  00:00:00
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2017 Muthen & Muthen

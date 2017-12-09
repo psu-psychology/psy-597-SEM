@@ -1,0 +1,492 @@
+Mplus VERSION 8 (Mac)
+MUTHEN & MUTHEN
+12/09/2017   8:48 AM
+
+INPUT INSTRUCTIONS
+
+  TITLE:
+   W/i saturated; B/w one factor;
+  DATA:
+  FILE = "hox_m4.dat";
+
+  VARIABLE:
+  NAMES = family wordlist cards matrices figures animals occupats;
+   MISSING=.;
+   CLUSTER = family;
+      USEVARIABLES ARE wordlist cards matrices figures animals occupats;
+  ANALYSIS:
+  TYPE IS TWOLEVEL;
+      ESTIMATOR IS MLR;
+  MODEL:
+   %WITHIN%
+    wordlist cards matrices figures animals occupats WITH
+    wordlist cards matrices figures animals occupats;
+   %BETWEEN%
+    general BY wordlist* cards matrices figures animals occupats;
+    general@1;
+  OUTPUT:
+  STDYX SAMPSTAT;
+
+
+
+INPUT READING TERMINATED NORMALLY
+
+
+
+
+W/i saturated; B/w one factor;
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Number of observations                                         400
+
+Number of dependent variables                                    6
+Number of independent variables                                  0
+Number of continuous latent variables                            1
+
+Observed dependent variables
+
+  Continuous
+   WORDLIST    CARDS       MATRICES    FIGURES     ANIMALS     OCCUPATS
+
+Continuous latent variables
+   GENERAL
+
+Variables with special functions
+
+  Cluster variable      FAMILY
+
+Estimator                                                      MLR
+Information matrix                                        OBSERVED
+Maximum number of iterations                                   100
+Convergence criterion                                    0.100D-05
+Maximum number of EM iterations                                500
+Convergence criteria for the EM algorithm
+  Loglikelihood change                                   0.100D-02
+  Relative loglikelihood change                          0.100D-05
+  Derivative                                             0.100D-03
+Minimum variance                                         0.100D-03
+Maximum number of steepest descent iterations                   20
+Maximum number of iterations for H1                           2000
+Convergence criterion for H1                             0.100D-03
+Optimization algorithm                                         EMA
+
+Input data file(s)
+  hox_m4.dat
+Input data format  FREE
+
+
+SUMMARY OF DATA
+
+     Number of missing data patterns             1
+     Number of clusters                         60
+
+     Average cluster size        6.667
+
+     Estimated Intraclass Correlations for the Y Variables
+
+                Intraclass              Intraclass              Intraclass
+     Variable  Correlation   Variable  Correlation   Variable  Correlation
+
+     WORDLIST     0.400      CARDS        0.408      MATRICES     0.369
+     FIGURES      0.374      ANIMALS      0.419      OCCUPATS     0.503
+
+
+
+COVARIANCE COVERAGE OF DATA
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+ WORDLIST       1.000
+ CARDS          1.000         1.000
+ MATRICES       1.000         1.000         1.000
+ FIGURES        1.000         1.000         1.000         1.000
+ ANIMALS        1.000         1.000         1.000         1.000         1.000
+ OCCUPATS       1.000         1.000         1.000         1.000         1.000
+
+
+           Covariance Coverage
+              OCCUPATS
+              ________
+ OCCUPATS       1.000
+
+
+SAMPLE STATISTICS
+
+NOTE:  The sample statistics for within and between refer to the
+       maximum-likelihood estimated within and between covariance
+       matrices, respectively.
+
+
+     ESTIMATED SAMPLE STATISTICS FOR WITHIN
+
+
+           Means
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+                0.000         0.000         0.000         0.000         0.000
+
+
+           Means
+              OCCUPATS
+              ________
+                0.000
+
+
+           Covariances
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+ WORDLIST      16.144
+ CARDS          9.862        15.277
+ MATRICES       9.539         9.623        15.589
+ FIGURES        3.687         2.864         2.851        16.544
+ ANIMALS        4.607         4.429         3.676         9.952        15.095
+ OCCUPATS       3.448         3.365         2.736         8.912         8.905
+
+
+           Covariances
+              OCCUPATS
+              ________
+ OCCUPATS      13.254
+
+
+           Correlations
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+ WORDLIST       1.000
+ CARDS          0.628         1.000
+ MATRICES       0.601         0.624         1.000
+ FIGURES        0.226         0.180         0.178         1.000
+ ANIMALS        0.295         0.292         0.240         0.630         1.000
+ OCCUPATS       0.236         0.236         0.190         0.602         0.630
+
+
+           Correlations
+              OCCUPATS
+              ________
+ OCCUPATS       1.000
+
+
+     ESTIMATED SAMPLE STATISTICS FOR BETWEEN
+
+
+           Means
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+               29.880        29.881        29.727        30.067        30.149
+
+
+           Means
+              OCCUPATS
+              ________
+               29.990
+
+
+           Covariances
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+ WORDLIST      10.744
+ CARDS          9.291        10.536
+ MATRICES       8.527         7.984         9.114
+ FIGURES        8.435         8.568         7.864         9.879
+ ANIMALS        9.580         9.893         8.037         8.875        10.882
+ OCCUPATS      10.412        10.411         9.107         9.594        11.012
+
+
+           Covariances
+              OCCUPATS
+              ________
+ OCCUPATS      13.411
+
+
+           Correlations
+              WORDLIST      CARDS         MATRICES      FIGURES       ANIMALS
+              ________      ________      ________      ________      ________
+ WORDLIST       1.000
+ CARDS          0.873         1.000
+ MATRICES       0.862         0.815         1.000
+ FIGURES        0.819         0.840         0.829         1.000
+ ANIMALS        0.886         0.924         0.807         0.856         1.000
+ OCCUPATS       0.867         0.876         0.824         0.833         0.912
+
+
+           Correlations
+              OCCUPATS
+              ________
+ OCCUPATS       1.000
+
+
+     MAXIMUM LOG-LIKELIHOOD VALUE FOR THE UNRESTRICTED (H1) MODEL IS -6394.348
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     WORDLIST             29.942      -0.324      12.000    0.50%      26.000     29.000     30.000
+             400.000      26.094       0.384      45.000    0.25%      31.000     34.000
+     CARDS                29.840      -0.053      11.000    0.25%      25.000     29.000     30.000
+             400.000      25.119       0.223      44.000    0.50%      31.000     34.000
+     MATRICES             29.735      -0.037      15.000    0.25%      25.000     29.000     30.000
+             400.000      24.320       0.069      46.000    0.25%      31.000     34.000
+     FIGURES              30.085       0.001      17.000    0.50%      26.000     29.000     30.000
+             400.000      26.073      -0.118      44.000    0.25%      31.000     34.000
+     ANIMALS              30.117      -0.205      15.000    0.25%      26.000     29.000     30.000
+             400.000      25.174      -0.027      46.000    0.25%      32.000     34.000
+     OCCUPATS             30.030      -0.145      15.000    0.25%      26.000     29.000     30.000
+             400.000      25.534      -0.120      43.000    0.25%      31.000     34.000
+
+
+THE MODEL ESTIMATION TERMINATED NORMALLY
+
+
+
+MODEL FIT INFORMATION
+
+Number of Free Parameters                       39
+
+Loglikelihood
+
+          H0 Value                       -6396.685
+          H0 Scaling Correction Factor      1.0208
+            for MLR
+          H1 Value                       -6394.348
+          H1 Scaling Correction Factor      1.0066
+            for MLR
+
+Information Criteria
+
+          Akaike (AIC)                   12871.370
+          Bayesian (BIC)                 13027.037
+          Sample-Size Adjusted BIC       12903.287
+            (n* = (n + 2) / 24)
+
+Chi-Square Test of Model Fit
+
+          Value                              4.944*
+          Degrees of Freedom                     9
+          P-Value                           0.8392
+          Scaling Correction Factor         0.9452
+            for MLR
+
+*   The chi-square value for MLM, MLMV, MLR, ULSMV, WLSM and WLSMV cannot be used
+    for chi-square difference testing in the regular way.  MLM, MLR and WLSM
+    chi-square difference testing is described on the Mplus website.  MLMV, WLSMV,
+    and ULSMV difference testing is done using the DIFFTEST option.
+
+RMSEA (Root Mean Square Error Of Approximation)
+
+          Estimate                           0.000
+
+CFI/TLI
+
+          CFI                                1.000
+          TLI                                1.011
+
+Chi-Square Test of Model Fit for the Baseline Model
+
+          Value                           1236.319
+          Degrees of Freedom                    30
+          P-Value                           0.0000
+
+SRMR (Standardized Root Mean Square Residual)
+
+          Value for Within                   0.003
+          Value for Between                  0.018
+
+
+
+MODEL RESULTS
+
+                                                    Two-Tailed
+                    Estimate       S.E.  Est./S.E.    P-Value
+
+Within Level
+
+ WORDLIST WITH
+    CARDS              9.879      1.497      6.599      0.000
+    MATRICES           9.657      1.373      7.033      0.000
+    FIGURES            3.650      0.894      4.084      0.000
+    ANIMALS            4.541      1.154      3.935      0.000
+    OCCUPATS           3.405      0.746      4.563      0.000
+
+ CARDS    WITH
+    MATRICES           9.612      1.129      8.517      0.000
+    FIGURES            2.883      0.897      3.214      0.001
+    ANIMALS            4.467      0.853      5.235      0.000
+    OCCUPATS           3.357      0.774      4.339      0.000
+
+ MATRICES WITH
+    FIGURES            2.898      1.027      2.821      0.005
+    ANIMALS            3.557      0.881      4.036      0.000
+    OCCUPATS           2.707      0.869      3.117      0.002
+
+ FIGURES  WITH
+    ANIMALS            9.940      1.070      9.293      0.000
+    OCCUPATS           8.909      1.045      8.529      0.000
+
+ ANIMALS  WITH
+    OCCUPATS           8.936      0.874     10.226      0.000
+
+ Variances
+    WORDLIST          16.218      1.959      8.277      0.000
+    CARDS             15.260      1.438     10.614      0.000
+    MATRICES          15.665      1.403     11.166      0.000
+    FIGURES           16.522      1.243     13.288      0.000
+    ANIMALS           15.125      1.192     12.691      0.000
+    OCCUPATS          13.272      1.047     12.682      0.000
+
+Between Level
+
+ GENERAL  BY
+    WORDLIST           3.057      0.375      8.161      0.000
+    CARDS              3.049      0.432      7.063      0.000
+    MATRICES           2.659      0.328      8.116      0.000
+    FIGURES            2.807      0.357      7.872      0.000
+    ANIMALS            3.177      0.379      8.371      0.000
+    OCCUPATS           3.434      0.396      8.682      0.000
+
+ Intercepts
+    WORDLIST          29.883      0.471     63.408      0.000
+    CARDS             29.881      0.466     64.173      0.000
+    MATRICES          29.746      0.439     67.756      0.000
+    FIGURES           30.059      0.456     65.861      0.000
+    ANIMALS           30.145      0.470     64.156      0.000
+    OCCUPATS          29.985      0.510     58.752      0.000
+
+ Variances
+    GENERAL            1.000      0.000    999.000    999.000
+
+ Residual Variances
+    WORDLIST           1.275      0.530      2.406      0.016
+    CARDS              1.301      0.619      2.103      0.035
+    MATRICES           1.879      0.599      3.139      0.002
+    FIGURES            2.074      0.588      3.525      0.000
+    ANIMALS            0.713      0.554      1.288      0.198
+    OCCUPATS           1.575      0.582      2.707      0.007
+
+
+STANDARDIZED MODEL RESULTS
+
+
+STDYX Standardization
+
+                                                    Two-Tailed
+                    Estimate       S.E.  Est./S.E.    P-Value
+
+Within Level
+
+ WORDLIST WITH
+    CARDS              0.628      0.042     15.017      0.000
+    MATRICES           0.606      0.038     15.857      0.000
+    FIGURES            0.223      0.046      4.847      0.000
+    ANIMALS            0.290      0.059      4.881      0.000
+    OCCUPATS           0.232      0.049      4.732      0.000
+
+ CARDS    WITH
+    MATRICES           0.622      0.036     17.326      0.000
+    FIGURES            0.182      0.053      3.420      0.001
+    ANIMALS            0.294      0.044      6.669      0.000
+    OCCUPATS           0.236      0.051      4.636      0.000
+
+ MATRICES WITH
+    FIGURES            0.180      0.059      3.056      0.002
+    ANIMALS            0.231      0.049      4.761      0.000
+    OCCUPATS           0.188      0.059      3.207      0.001
+
+ FIGURES  WITH
+    ANIMALS            0.629      0.035     18.108      0.000
+    OCCUPATS           0.602      0.040     15.116      0.000
+
+ ANIMALS  WITH
+    OCCUPATS           0.631      0.029     21.554      0.000
+
+ Variances
+    WORDLIST           1.000      0.000    999.000    999.000
+    CARDS              1.000      0.000    999.000    999.000
+    MATRICES           1.000      0.000    999.000    999.000
+    FIGURES            1.000      0.000    999.000    999.000
+    ANIMALS            1.000      0.000    999.000    999.000
+    OCCUPATS           1.000      0.000    999.000    999.000
+
+Between Level
+
+ GENERAL  BY
+    WORDLIST           0.938      0.031     30.044      0.000
+    CARDS              0.937      0.036     26.072      0.000
+    MATRICES           0.889      0.040     21.971      0.000
+    FIGURES            0.890      0.038     23.620      0.000
+    ANIMALS            0.966      0.026     36.856      0.000
+    OCCUPATS           0.939      0.024     38.437      0.000
+
+ Intercepts
+    WORDLIST           9.170      0.982      9.334      0.000
+    CARDS              9.178      1.109      8.272      0.000
+    MATRICES           9.943      0.976     10.187      0.000
+    FIGURES            9.527      0.985      9.674      0.000
+    ANIMALS            9.171      1.059      8.657      0.000
+    OCCUPATS           8.201      0.877      9.353      0.000
+
+ Variances
+    GENERAL            1.000      0.000    999.000    999.000
+
+ Residual Variances
+    WORDLIST           0.120      0.059      2.050      0.040
+    CARDS              0.123      0.067      1.824      0.068
+    MATRICES           0.210      0.072      2.919      0.004
+    FIGURES            0.208      0.067      3.107      0.002
+    ANIMALS            0.066      0.051      1.302      0.193
+    OCCUPATS           0.118      0.046      2.566      0.010
+
+
+R-SQUARE
+
+Within Level
+
+Between Level
+
+    Observed                                        Two-Tailed
+    Variable        Estimate       S.E.  Est./S.E.    P-Value
+
+    WORDLIST           0.880      0.059     15.022      0.000
+    CARDS              0.877      0.067     13.036      0.000
+    MATRICES           0.790      0.072     10.986      0.000
+    FIGURES            0.792      0.067     11.810      0.000
+    ANIMALS            0.934      0.051     18.428      0.000
+    OCCUPATS           0.882      0.046     19.219      0.000
+
+
+QUALITY OF NUMERICAL RESULTS
+
+     Condition Number for the Information Matrix              0.225E-04
+       (ratio of smallest to largest eigenvalue)
+
+
+     Beginning Time:  08:48:14
+        Ending Time:  08:48:14
+       Elapsed Time:  00:00:00
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2017 Muthen & Muthen

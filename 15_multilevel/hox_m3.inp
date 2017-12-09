@@ -1,0 +1,23 @@
+TITLE:
+ W/i one factor; B/w one factor;
+DATA:
+FILE = "hox_m3.dat";
+ 
+VARIABLE:
+NAMES = family wordlist cards matrices figures animals occupats; 
+ MISSING=.;
+ CLUSTER = family;
+    USEVARIABLES ARE wordlist cards matrices figures animals occupats;
+ANALYSIS:
+TYPE IS TWOLEVEL;
+    ESTIMATOR IS MLR;
+MODEL:
+ 
+    %WITHIN%
+      gen_wi BY wordlist* cards matrices figures animals occupats;
+      gen_wi@1;
+    %BETWEEN%
+      gen_bw BY wordlist* cards matrices figures animals occupats;
+      gen_bw@1;
+OUTPUT:
+STDYX SAMPSTAT;

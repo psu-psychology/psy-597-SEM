@@ -1,0 +1,23 @@
+TITLE:
+ W/i saturated, B/w saturated;
+DATA:
+FILE = "hox_m2.dat";
+ 
+VARIABLE:
+NAMES = family wordlist cards matrices figures animals occupats; 
+ MISSING=.;
+ CLUSTER = family;
+    USEVARIABLES ARE wordlist cards matrices figures animals occupats;
+ANALYSIS:
+TYPE IS TWOLEVEL;
+    ESTIMATOR IS MLR;
+MODEL:
+ 
+    %WITHIN%
+      wordlist cards matrices figures animals occupats WITH
+        wordlist cards matrices figures animals occupats;
+    %BETWEEN%
+      wordlist cards matrices figures animals occupats WITH
+        wordlist cards matrices figures animals occupats;
+OUTPUT:
+STDYX SAMPSTAT;

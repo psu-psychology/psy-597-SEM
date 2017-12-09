@@ -1,0 +1,18 @@
+TITLE:
+Within independence; Between independence;
+DATA:
+FILE = "hox_m1.dat";
+ 
+VARIABLE:
+NAMES = family wordlist cards matrices figures animals occupats; 
+ MISSING=.;
+ CLUSTER = family;
+    USEVARIABLES ARE wordlist cards matrices figures animals occupats;
+ANALYSIS:
+TYPE IS TWOLEVEL;
+    ESTIMATOR IS MLR;
+MODEL:
+%WITHIN%
+    %BETWEEN%
+OUTPUT:
+STDYX SAMPSTAT;
